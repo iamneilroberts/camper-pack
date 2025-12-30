@@ -1,0 +1,22 @@
+{
+  "name": "camper-pack",
+  "version": "1.0.0",
+  "description": "PWA for managing camper trailer packing lists and inventory",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev public --d1=CAMPER_DB --port=8787",
+    "build": "tsc",
+    "deploy": "wrangler pages deploy public",
+    "db:migrate": "wrangler d1 execute camper-pack --local --file=db/migrations/0001_initial.sql",
+    "db:migrate:prod": "wrangler d1 execute camper-pack --file=db/migrations/0001_initial.sql",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.91.0"
+  },
+  "dependencies": {
+    "hono": "^4.6.12"
+  }
+}

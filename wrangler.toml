@@ -1,0 +1,11 @@
+name = "camper-pack"
+compatibility_date = "2024-12-30"
+pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "CAMPER_DB"
+database_name = "camper-pack"
+database_id = "ccdf078f-3766-4eeb-ad1f-d8986c2a4c7a"
+
+[vars]
+ANTHROPIC_API_KEY = ""  # Will be set as secret for production
