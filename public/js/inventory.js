@@ -2,11 +2,15 @@
  * CamperPack - Inventory Management
  */
 
+// Personal categories that support per-traveler quantities
+const PERSONAL_CATEGORIES = ['clothing', 'toiletries', 'meds', 'other'];
+
 class InventoryManager {
   constructor() {
     this.currentFilter = 'all';
     this.searchQuery = '';
     this.editingItemId = null;
+    this.travelers = [];
   }
 
   async init() {
@@ -52,11 +56,54 @@ class InventoryManager {
         cancelBtn.addEventListener('click', () => this.hideItemForm());
       }
     }
+
+    // Category change - show/hide traveler quantities
+    const categorySelect = document.getElementById('item-category');
+    if (categorySelect) {
+      categorySelect.addEventListener('change', () => this.updateTravelerQuantitiesVisibility());
+    }
+  }
+
+  updateTravelerQuantitiesVisibility() {
+    const category = document.getElementById('item-category').value;
+    const section = document.getElementById('traveler-quantities-section');
+
+    if (PERSONAL_CATEGORIES.includes(category) && this.travelers.length > 0) {
+      section.classList.remove('hidden');
+    } else {
+      section.classList.add('hidden');
+    }
+  }
+
+  renderTravelerQuantityInputs(travelerQuantities = {}) {
+    const container = document.getElementById('traveler-qty-inputs');
+    if (!container || this.travelers.length === 0) return;
+
+    container.innerHTML = this.travelers.map(t => `
+      <div class="traveler-qty-row">
+        <span class="traveler-name">${this.escapeHtml(t.name)}</span>
+        <input type="number" min="0" value="${travelerQuantities[t.id] || 1}"
+               data-traveler-id="${t.id}" class="traveler-qty-input">
+      </div>
+    `).join('');
+  }
+
+  getTravelerQuantitiesFromForm() {
+    const quantities = {};
+    document.querySelectorAll('.traveler-qty-input').forEach(input => {
+      const travelerId = input.dataset.travelerId;
+      const qty = parseInt(input.value) || 0;
+      if (qty > 0) {
+        quantities[travelerId] = qty;
+      }
+    });
+    return quantities;
   }
 
   async loadInventory() {
     this.items = await window.db.getAllItems();
     this.locations = await window.db.getAllLocations();
+    this.travelers = await window.db.getAllTravelers();
     this.renderItems();
   }
 
@@ -98,12 +145,18 @@ class InventoryManager {
 
     container.innerHTML = filteredItems.map(item => this.renderItemCard(item)).join('');
 
-    // Add click handlers
-    container.querySelectorAll('.item-card').forEach(card => {
-      card.addEventListener('click', () => {
-        this.showItemForm(card.dataset.id);
-      });
-    });
+    // Initialize swipe-to-delete
+    if (!this.swipeInitialized) {
+      window.app.initSwipeToDelete(
+        container,
+        '.item-card',
+        async (id) => {
+          await window.db.deleteItem(id);
+          await this.loadInventory();
+        }
+      );
+      this.swipeInitialized = true;
+    }
   }
 
   renderItemCard(item) {
@@ -117,13 +170,16 @@ class InventoryManager {
     const icon = item.icon || this.getCategoryIcon(item.category);
 
     return `
-      <div class="item-card" data-id="${item.id}">
-        <div class="item-icon">${icon}</div>
-        <div class="item-details">
-          <div class="item-name">${this.escapeHtml(item.name)}</div>
-          <div class="item-meta">${this.escapeHtml(locationName)} • ${item.quantity || 1}x</div>
+      <div class="item-card swipeable-item" data-id="${item.id}">
+        <div class="item-content" onclick="inventory.showItemForm('${item.id}')">
+          <div class="item-icon">${icon}</div>
+          <div class="item-details">
+            <div class="item-name">${this.escapeHtml(item.name)}</div>
+            <div class="item-meta">${this.escapeHtml(locationName)} • ${item.quantity || 1}x</div>
+          </div>
+          <div class="item-badges">${badges.join('')}</div>
         </div>
-        <div class="item-badges">${badges.join('')}</div>
+        <div class="delete-action">Delete</div>
       </div>
     `;
   }
@@ -148,9 +204,14 @@ class InventoryManager {
   async showItemForm(itemId = null) {
     this.editingItemId = itemId;
 
+    // Refresh travelers list
+    this.travelers = await window.db.getAllTravelers();
+
     // Reset form
     const form = document.getElementById('item-form');
     form.reset();
+
+    let travelerQuantities = {};
 
     // If editing, populate form
     if (itemId) {
@@ -165,8 +226,15 @@ class InventoryManager {
         document.getElementById('item-critical').checked = !!item.is_critical;
         document.getElementById('item-purchase').value = item.purchase_timing || '';
         document.getElementById('item-notes').value = item.notes || '';
+        travelerQuantities = item.traveler_quantities || {};
       }
     }
+
+    // Render traveler quantity inputs
+    this.renderTravelerQuantityInputs(travelerQuantities);
+
+    // Update visibility based on category
+    this.updateTravelerQuantitiesVisibility();
 
     // Show form screen
     window.app.showScreen('item-form');
@@ -182,9 +250,11 @@ class InventoryManager {
   async handleItemSubmit(e) {
     e.preventDefault();
 
+    const category = document.getElementById('item-category').value;
+
     const item = {
       name: document.getElementById('item-name').value.trim(),
-      category: document.getElementById('item-category').value,
+      category: category,
       storage_location: document.getElementById('item-location').value,
       quantity: parseInt(document.getElementById('item-quantity').value) || 1,
       icon: document.getElementById('item-icon').value.trim(),
@@ -193,6 +263,11 @@ class InventoryManager {
       purchase_timing: document.getElementById('item-purchase').value || null,
       notes: document.getElementById('item-notes').value.trim() || null
     };
+
+    // For personal categories, save traveler quantities
+    if (PERSONAL_CATEGORIES.includes(category) && this.travelers.length > 0) {
+      item.traveler_quantities = this.getTravelerQuantitiesFromForm();
+    }
 
     if (this.editingItemId) {
       item.id = this.editingItemId;

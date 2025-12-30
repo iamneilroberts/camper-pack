@@ -2,12 +2,18 @@
  * CamperPack - Trips and Packing List Management
  */
 
+// Personal categories - use shared constant from inventory.js if available
+const TRIPS_PERSONAL_CATEGORIES = typeof PERSONAL_CATEGORIES !== 'undefined'
+  ? PERSONAL_CATEGORIES
+  : ['clothing', 'toiletries', 'meds', 'other'];
+
 class TripsManager {
   constructor() {
     this.currentTrip = null;
     this.tripItems = [];
     this.sortMode = 'workflow'; // workflow, location, category
     this.locations = [];
+    this.travelers = [];
   }
 
   async init() {
@@ -226,6 +232,7 @@ class TripsManager {
     if (!this.currentTrip) return;
 
     this.tripItems = await window.db.getTripItems(this.currentTrip.id);
+    this.travelers = await window.db.getAllTravelers();
 
     // Get all items details
     const items = await window.db.getAllItems();
@@ -425,13 +432,32 @@ class TripsManager {
     const badges = [];
     if (item.is_critical) badges.push('<span class="badge-sm critical">!</span>');
 
+    // Show traveler quantities for personal items
+    let quantityInfo = '';
+    if (TRIPS_PERSONAL_CATEGORIES.includes(item.category) && this.travelers.length > 0 && item.traveler_quantities) {
+      const travelerQtys = Object.entries(item.traveler_quantities)
+        .map(([travelerId, qty]) => {
+          const traveler = this.travelers.find(t => t.id === travelerId);
+          return traveler ? `${traveler.name}: ${qty}` : null;
+        })
+        .filter(Boolean);
+
+      if (travelerQtys.length > 0) {
+        quantityInfo = `<div class="checklist-travelers">${travelerQtys.join(', ')}</div>`;
+      }
+    } else if (item.quantity && item.quantity > 1) {
+      // Show regular quantity if no traveler quantities
+      quantityInfo = `<div class="checklist-quantity">${item.quantity}x</div>`;
+    }
+
     return `
-      <div class="checklist-item ${tripItem.packed ? 'checked' : ''}" data-id="${tripItem.id}">
+      <div class="checklist-item ${tripItem.packed ? 'checked' : ''}" data-id="${tripItem.id}" data-item-id="${item.id}">
         <div class="checklist-checkbox"></div>
         <div class="checklist-icon">${icon}</div>
         <div class="checklist-info">
           <div class="checklist-name">${this.escapeHtml(item.name)} ${badges.join('')}</div>
           <div class="checklist-location">${location}</div>
+          ${quantityInfo}
         </div>
       </div>
     `;
@@ -441,6 +467,16 @@ class TripsManager {
     container.querySelectorAll('.checklist-item').forEach(el => {
       el.addEventListener('click', () => this.togglePacked(el.dataset.id));
     });
+
+    // Initialize long-press for quick edit (only once)
+    if (!this.longPressInitialized) {
+      window.app.initLongPress(
+        container,
+        '.checklist-item',
+        (itemId) => window.app.showQuickEdit(itemId)
+      );
+      this.longPressInitialized = true;
+    }
   }
 
   async togglePacked(tripItemId) {

@@ -28,7 +28,7 @@
       <!-- Home Screen -->
       <section id="home-screen" class="screen active">
         <div class="home-hero">
-          <div class="hero-icon">&#x1F3D5;</div>
+          <img src="/icons/trailer-caravan.svg" alt="Travel Trailer" class="hero-icon">
           <h2>Ready for your next adventure?</h2>
         </div>
 
@@ -159,6 +159,13 @@
               <label for="item-icon">Icon</label>
               <input type="text" id="item-icon" placeholder="emoji">
             </div>
+          </div>
+
+          <!-- Traveler Quantities (for personal items) -->
+          <div id="traveler-quantities-section" class="form-group hidden">
+            <label>Quantity per Traveler</label>
+            <p class="form-hint">For clothing, toiletries, meds - specify quantity for each person</p>
+            <div id="traveler-qty-inputs" class="traveler-qty-inputs"></div>
           </div>
 
           <div class="form-group">
@@ -321,6 +328,16 @@
         </div>
 
         <div class="settings-section">
+          <h3>Travelers</h3>
+          <p class="settings-hint">People traveling - used for personal items like clothing and toiletries</p>
+          <div id="travelers-list" class="travelers-list"></div>
+          <div class="add-traveler-row">
+            <input type="text" id="new-traveler-name" placeholder="Add traveler name..." class="traveler-input">
+            <button id="add-traveler-btn" class="btn btn-primary btn-small">Add</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
           <h3>Import/Export</h3>
           <p class="settings-hint">CSV format works with Excel, Google Sheets, or any text editor</p>
           <button id="import-csv-btn" class="btn btn-primary">Import from CSV</button>
@@ -365,6 +382,39 @@
         <span class="nav-label">Settings</span>
       </button>
     </nav>
+  </div>
+
+  <!-- Quick Edit Modal -->
+  <div id="quick-edit-modal" class="modal hidden">
+    <div class="modal-backdrop" onclick="app.closeQuickEdit()"></div>
+    <div class="modal-content">
+      <h3>Quick Edit</h3>
+      <div id="qe-item-name" class="qe-item-name"></div>
+
+      <div class="qe-options">
+        <label class="qe-option">
+          <input type="checkbox" id="qe-permanent">
+          <span>Permanent (always stored)</span>
+        </label>
+        <label class="qe-option">
+          <input type="checkbox" id="qe-critical">
+          <span>Critical (cannot leave without)</span>
+        </label>
+        <div class="qe-select-group">
+          <label for="qe-purchase">Purchase Timing</label>
+          <select id="qe-purchase">
+            <option value="">Not a purchase item</option>
+            <option value="before_arrival">Buy before arriving</option>
+            <option value="after_arrival">Can buy after arriving</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="app.closeQuickEdit()">Cancel</button>
+        <button class="btn btn-primary" onclick="app.saveQuickEdit()">Save</button>
+      </div>
+    </div>
   </div>
 
   <!-- Offline indicator -->

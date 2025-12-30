@@ -142,7 +142,8 @@ main {
 }
 
 .hero-icon {
-  font-size: 4rem;
+  width: 80px;
+  height: 80px;
   margin-bottom: 12px;
 }
 
@@ -258,15 +259,25 @@ main {
 .item-card {
   background: var(--bg-card);
   border-radius: var(--radius-sm);
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
-.item-card:active {
+.item-card:not(.swipeable-item) {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.item-card.swipeable-item .item-content {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.item-card:active:not(.swiped) {
   background: var(--border-color);
 }
 
@@ -591,6 +602,19 @@ form {
   color: var(--text-muted);
 }
 
+.checklist-travelers {
+  font-size: 0.75rem;
+  color: var(--primary);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.checklist-quantity {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 /* Pre-Departure */
 .pre-departure-header {
   text-align: center;
@@ -708,6 +732,243 @@ form {
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-bottom: 12px;
+}
+
+/* Travelers List */
+.travelers-list {
+  margin-bottom: 12px;
+}
+
+.traveler-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+
+.traveler-item .traveler-name {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.traveler-item .delete-traveler-btn {
+  background: transparent;
+  border: none;
+  color: var(--danger);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.traveler-item .delete-traveler-btn:hover {
+  opacity: 1;
+}
+
+.add-traveler-row {
+  display: flex;
+  gap: 8px;
+}
+
+.traveler-input {
+  flex: 1;
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.traveler-input:focus {
+  outline: none;
+  border-color: var(--primary-light);
+}
+
+.btn-small {
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  width: auto !important;
+  margin-top: 0 !important;
+}
+
+/* Swipe to Delete */
+.swipeable-item {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.swipeable-item .item-content {
+  position: relative;
+  z-index: 1;
+  background: var(--bg-card);
+  transition: transform 0.2s ease-out;
+}
+
+.swipeable-item .delete-action {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  background: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  z-index: 0;
+}
+
+.swipeable-item.swiped .item-content {
+  transform: translateX(-80px);
+}
+
+/* Quick Edit Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.modal-content {
+  position: relative;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px;
+  width: 90%;
+  max-width: 400px;
+  z-index: 1;
+}
+
+.modal-content h3 {
+  margin-bottom: 8px;
+  color: var(--primary-light);
+}
+
+.qe-item-name {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.qe-options {
+  margin-bottom: 20px;
+}
+
+.qe-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  cursor: pointer;
+}
+
+.qe-option input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+}
+
+.qe-select-group {
+  margin-top: 12px;
+}
+
+.qe-select-group label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.qe-select-group select {
+  width: 100%;
+  padding: 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-actions .btn {
+  flex: 1;
+}
+
+/* Long press visual feedback */
+.long-pressing {
+  opacity: 0.7;
+  transform: scale(0.98);
+}
+
+/* Traveler Quantities in Item Form */
+.form-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.traveler-qty-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.traveler-qty-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-input);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.traveler-qty-row .traveler-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.traveler-qty-row input[type="number"] {
+  width: 70px;
+  padding: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 1rem;
+  text-align: center;
 }
 
 /* Bottom Navigation */
@@ -1083,7 +1344,7 @@ form {
 /* Sticky Actions */
 .sticky-actions {
   position: fixed;
-  bottom: 0;
+  bottom: var(--nav-height);
   left: 0;
   right: 0;
   padding: 16px;
@@ -1091,7 +1352,8 @@ form {
   border-top: 1px solid var(--border-color);
   display: flex;
   gap: 12px;
-  z-index: 50;
+  z-index: 100;
+  padding-bottom: calc(16px + var(--safe-area-bottom));
 }
 
 .sticky-actions .btn {

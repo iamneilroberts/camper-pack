@@ -35,6 +35,9 @@ class CamperPackApp {
     // Bind settings
     this.bindSettings();
 
+    // Load travelers
+    await this.loadTravelers();
+
     // Check online status
     this.updateOnlineStatus();
 
@@ -171,6 +174,268 @@ class CamperPackApp {
 
     // Update last sync time display
     this.updateLastSyncDisplay();
+
+    // Add traveler button
+    const addTravelerBtn = document.getElementById('add-traveler-btn');
+    if (addTravelerBtn) {
+      addTravelerBtn.addEventListener('click', () => this.addTraveler());
+    }
+
+    // Add traveler on Enter key
+    const travelerInput = document.getElementById('new-traveler-name');
+    if (travelerInput) {
+      travelerInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          this.addTraveler();
+        }
+      });
+    }
+  }
+
+  // Traveler management methods
+  async loadTravelers() {
+    const travelers = await window.db.getAllTravelers();
+    this.renderTravelers(travelers);
+  }
+
+  renderTravelers(travelers) {
+    const container = document.getElementById('travelers-list');
+    if (!container) return;
+
+    if (travelers.length === 0) {
+      container.innerHTML = '<p class="empty-state">No travelers added yet</p>';
+      return;
+    }
+
+    container.innerHTML = travelers.map(t => `
+      <div class="traveler-item" data-id="${t.id}">
+        <span class="traveler-name">${this.escapeHtml(t.name)}</span>
+        <button class="delete-traveler-btn" onclick="app.deleteTraveler('${t.id}')" title="Remove">×</button>
+      </div>
+    `).join('');
+  }
+
+  async addTraveler() {
+    const input = document.getElementById('new-traveler-name');
+    const name = input.value.trim();
+
+    if (!name) {
+      alert('Please enter a traveler name');
+      return;
+    }
+
+    // Check for duplicates
+    const existing = await window.db.getAllTravelers();
+    if (existing.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+      alert('A traveler with this name already exists');
+      return;
+    }
+
+    await window.db.saveTraveler({ name });
+    input.value = '';
+    await this.loadTravelers();
+  }
+
+  async deleteTraveler(id) {
+    if (!confirm('Remove this traveler? Their item quantities will be removed.')) {
+      return;
+    }
+
+    await window.db.deleteTraveler(id);
+    await this.loadTravelers();
+  }
+
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Swipe-to-delete functionality
+  initSwipeToDelete(container, itemSelector, onDelete) {
+    let startX = 0;
+    let currentX = 0;
+    let swipingItem = null;
+    let isDragging = false;
+    const SWIPE_THRESHOLD = 80;
+
+    // Reset any open swipe
+    const resetSwipe = (except) => {
+      const swiped = container.querySelectorAll('.swiped');
+      swiped.forEach(item => {
+        if (item !== except) {
+          item.classList.remove('swiped');
+          const content = item.querySelector('.item-content');
+          if (content) content.style.transform = '';
+        }
+      });
+    };
+
+    container.addEventListener('touchstart', (e) => {
+      const item = e.target.closest(itemSelector);
+      if (!item || e.target.closest('.delete-action')) return;
+
+      swipingItem = item;
+      startX = e.touches[0].clientX;
+      isDragging = false;
+
+      // Reset other swiped items
+      resetSwipe(item);
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+      if (!swipingItem) return;
+
+      currentX = e.touches[0].clientX;
+      const diff = startX - currentX;
+
+      // Only start dragging after moving more than 10px
+      if (Math.abs(diff) > 10) {
+        isDragging = true;
+      }
+
+      if (isDragging && diff > 0) {
+        // Swiping left - show delete
+        const translate = Math.min(diff, SWIPE_THRESHOLD + 20);
+        const content = swipingItem.querySelector('.item-content');
+        if (content) {
+          content.style.transform = `translateX(-${translate}px)`;
+        }
+      }
+    }, { passive: true });
+
+    container.addEventListener('touchend', (e) => {
+      if (!swipingItem) return;
+
+      const diff = startX - currentX;
+      const content = swipingItem.querySelector('.item-content');
+
+      if (diff > SWIPE_THRESHOLD) {
+        // Snap to delete state
+        swipingItem.classList.add('swiped');
+        if (content) content.style.transform = `translateX(-${SWIPE_THRESHOLD}px)`;
+      } else {
+        // Reset
+        swipingItem.classList.remove('swiped');
+        if (content) content.style.transform = '';
+      }
+
+      swipingItem = null;
+      isDragging = false;
+    }, { passive: true });
+
+    // Handle delete button clicks
+    container.addEventListener('click', async (e) => {
+      const deleteBtn = e.target.closest('.delete-action');
+      if (!deleteBtn) {
+        // Clicking elsewhere resets swipe
+        if (!e.target.closest('.swiped')) {
+          resetSwipe();
+        }
+        return;
+      }
+
+      const item = deleteBtn.closest(itemSelector);
+      const itemId = item?.dataset.id;
+      if (itemId && confirm('Delete this item?')) {
+        await onDelete(itemId);
+      }
+    });
+
+    // Handle clicks outside to reset
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest(itemSelector)) {
+        resetSwipe();
+      }
+    });
+  }
+
+  // Long press detection for quick edit
+  initLongPress(container, itemSelector, onLongPress) {
+    let pressTimer = null;
+    let pressTarget = null;
+    const LONG_PRESS_DURATION = 500;
+
+    container.addEventListener('touchstart', (e) => {
+      const item = e.target.closest(itemSelector);
+      if (!item) return;
+
+      pressTarget = item;
+      pressTarget.classList.add('long-pressing');
+
+      pressTimer = setTimeout(() => {
+        pressTarget?.classList.remove('long-pressing');
+        const itemId = item.dataset.itemId || item.dataset.id;
+        if (itemId) {
+          onLongPress(itemId);
+        }
+      }, LONG_PRESS_DURATION);
+    }, { passive: true });
+
+    container.addEventListener('touchmove', () => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+        pressTarget?.classList.remove('long-pressing');
+      }
+    }, { passive: true });
+
+    container.addEventListener('touchend', () => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+        pressTarget?.classList.remove('long-pressing');
+      }
+    }, { passive: true });
+  }
+
+  // Quick Edit Modal
+  quickEditItemId = null;
+
+  async showQuickEdit(itemId) {
+    this.quickEditItemId = itemId;
+    const item = await window.db.getItem(itemId);
+    if (!item) return;
+
+    document.getElementById('qe-item-name').textContent = item.name;
+    document.getElementById('qe-permanent').checked = !!item.is_permanent;
+    document.getElementById('qe-critical').checked = !!item.is_critical;
+    document.getElementById('qe-purchase').value = item.purchase_timing || '';
+
+    document.getElementById('quick-edit-modal').classList.remove('hidden');
+  }
+
+  closeQuickEdit() {
+    document.getElementById('quick-edit-modal').classList.add('hidden');
+    this.quickEditItemId = null;
+  }
+
+  async saveQuickEdit() {
+    if (!this.quickEditItemId) return;
+
+    const item = await window.db.getItem(this.quickEditItemId);
+    if (!item) return;
+
+    item.is_permanent = document.getElementById('qe-permanent').checked ? 1 : 0;
+    item.is_critical = document.getElementById('qe-critical').checked ? 1 : 0;
+    item.purchase_timing = document.getElementById('qe-purchase').value || null;
+
+    await window.db.saveItem(item);
+
+    // Refresh the current view
+    if (window.trips && this.currentScreen === 'packing') {
+      await window.trips.loadPackingList();
+    }
+    if (window.templates && this.currentScreen === 'templates') {
+      const template = await window.db.getTemplate(window.templates.currentTemplateId);
+      const selectedIds = new Set((await window.db.getTemplateItems(window.templates.currentTemplateId)).map(ti => ti.item_id));
+      window.templates.renderTemplateEditor(template, selectedIds);
+    }
+    if (window.inventory && this.currentScreen === 'inventory') {
+      await window.inventory.loadInventory();
+    }
+
+    this.closeQuickEdit();
   }
 
   handleAction(action) {

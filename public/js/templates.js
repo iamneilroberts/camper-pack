@@ -92,6 +92,16 @@ class TemplatesManager {
     container.querySelectorAll('.template-item-checkbox').forEach(checkbox => {
       checkbox.addEventListener('change', () => this.updateStats());
     });
+
+    // Initialize long-press for quick edit (only once)
+    if (!this.longPressInitialized) {
+      window.app.initLongPress(
+        container,
+        '.template-item',
+        (itemId) => window.app.showQuickEdit(itemId)
+      );
+      this.longPressInitialized = true;
+    }
   }
 
   renderCategorySection(category, items, selectedIds) {

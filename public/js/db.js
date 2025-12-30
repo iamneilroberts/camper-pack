@@ -3,7 +3,7 @@
  */
 
 const DB_NAME = 'camperpack';
-const DB_VERSION = 2; // Upgraded to add templateItems store
+const DB_VERSION = 3; // Added travelers store
 
 class CamperPackDB {
   constructor() {
@@ -74,6 +74,13 @@ class CamperPackDB {
         if (!db.objectStoreNames.contains('syncQueue')) {
           const syncStore = db.createObjectStore('syncQueue', { keyPath: 'id', autoIncrement: true });
           syncStore.createIndex('synced', 'synced', { unique: false });
+        }
+
+        // Travelers store
+        if (!db.objectStoreNames.contains('travelers')) {
+          const travelersStore = db.createObjectStore('travelers', { keyPath: 'id' });
+          travelersStore.createIndex('name', 'name', { unique: false });
+          travelersStore.createIndex('sort_order', 'sort_order', { unique: false });
         }
       };
     });
@@ -316,6 +323,31 @@ class CamperPackDB {
     return this.getByIndex('locations', 'area', area);
   }
 
+  // Travelers methods
+  async getAllTravelers() {
+    const travelers = await this.getAll('travelers');
+    return travelers.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  }
+
+  async getTraveler(id) {
+    return this.get('travelers', id);
+  }
+
+  async saveTraveler(traveler) {
+    if (!traveler.id) {
+      traveler.id = this.generateId();
+      traveler.created_at = new Date().toISOString();
+      // Set sort_order to end of list
+      const all = await this.getAllTravelers();
+      traveler.sort_order = all.length;
+    }
+    return this.put('travelers', traveler);
+  }
+
+  async deleteTraveler(id) {
+    return this.delete('travelers', id);
+  }
+
   // Sync Queue methods
   async addToSyncQueue(tableName, recordId, action, data) {
     return new Promise((resolve, reject) => {
@@ -429,6 +461,12 @@ class CamperPackDB {
       if (cloudData.tripItems && cloudData.tripItems.length > 0) {
         for (const ti of cloudData.tripItems) {
           await this.put('tripItems', ti, false);
+        }
+      }
+
+      if (cloudData.travelers && cloudData.travelers.length > 0) {
+        for (const traveler of cloudData.travelers) {
+          await this.put('travelers', traveler, false);
         }
       }
 
