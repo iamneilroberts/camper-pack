@@ -67,7 +67,8 @@ async function processChange(db: D1Database, change: SyncItem) {
     templates: 'trip_templates',
     trips: 'trips',
     tripItems: 'trip_items',
-    locations: 'storage_locations'
+    locations: 'storage_locations',
+    templateItems: 'template_items'
   };
 
   const dbTable = tableMap[table_name];
@@ -132,12 +133,23 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const tripItems = await env.CAMPER_DB.prepare('SELECT * FROM trip_items').all();
     const locations = await env.CAMPER_DB.prepare('SELECT * FROM storage_locations').all();
 
+    // Try to get template_items (may not exist in older databases)
+    let templateItems: any[] = [];
+    try {
+      const result = await env.CAMPER_DB.prepare('SELECT * FROM template_items').all();
+      templateItems = result.results || [];
+    } catch (e) {
+      // Table doesn't exist yet - that's OK
+      console.log('template_items table not found, skipping');
+    }
+
     return new Response(JSON.stringify({
       items: items.results,
       templates: templates.results,
       trips: trips.results,
       tripItems: tripItems.results,
-      locations: locations.results
+      locations: locations.results,
+      templateItems: templateItems
     }), {
       headers: { 'Content-Type': 'application/json' }
     });

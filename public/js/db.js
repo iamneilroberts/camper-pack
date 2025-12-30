@@ -3,7 +3,7 @@
  */
 
 const DB_NAME = 'camperpack';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Upgraded to add templateItems store
 
 class CamperPackDB {
   constructor() {
@@ -61,6 +61,13 @@ class CamperPackDB {
         if (!db.objectStoreNames.contains('locations')) {
           const locationsStore = db.createObjectStore('locations', { keyPath: 'id' });
           locationsStore.createIndex('area', 'area', { unique: false });
+        }
+
+        // Template items store (items associated with each template)
+        if (!db.objectStoreNames.contains('templateItems')) {
+          const templateItemsStore = db.createObjectStore('templateItems', { keyPath: 'id' });
+          templateItemsStore.createIndex('template_id', 'template_id', { unique: false });
+          templateItemsStore.createIndex('item_id', 'item_id', { unique: false });
         }
 
         // Sync queue store
@@ -203,6 +210,49 @@ class CamperPackDB {
       template.created_at = new Date().toISOString();
     }
     return this.put('templates', template);
+  }
+
+  // Template Items methods (items associated with templates)
+  async getTemplateItems(templateId) {
+    return this.getByIndex('templateItems', 'template_id', templateId);
+  }
+
+  async getAllTemplateItems() {
+    return this.getAll('templateItems');
+  }
+
+  async saveTemplateItem(templateItem) {
+    if (!templateItem.id) {
+      templateItem.id = `${templateItem.template_id}-${templateItem.item_id}`;
+      templateItem.created_at = new Date().toISOString();
+    }
+    return this.put('templateItems', templateItem);
+  }
+
+  async deleteTemplateItem(templateId, itemId) {
+    const id = `${templateId}-${itemId}`;
+    return this.delete('templateItems', id);
+  }
+
+  async setTemplateItems(templateId, itemIds) {
+    // Remove all existing items for this template
+    const existing = await this.getTemplateItems(templateId);
+    for (const item of existing) {
+      await this.delete('templateItems', item.id);
+    }
+
+    // Add new items
+    for (const itemId of itemIds) {
+      await this.saveTemplateItem({
+        template_id: templateId,
+        item_id: itemId
+      });
+    }
+  }
+
+  async isItemInTemplate(templateId, itemId) {
+    const items = await this.getTemplateItems(templateId);
+    return items.some(ti => ti.item_id === itemId);
   }
 
   // Trips methods
@@ -367,6 +417,18 @@ class CamperPackDB {
       if (cloudData.locations && cloudData.locations.length > 0) {
         for (const location of cloudData.locations) {
           await this.put('locations', location, false);
+        }
+      }
+
+      if (cloudData.templateItems && cloudData.templateItems.length > 0) {
+        for (const ti of cloudData.templateItems) {
+          await this.put('templateItems', ti, false);
+        }
+      }
+
+      if (cloudData.tripItems && cloudData.tripItems.length > 0) {
+        for (const ti of cloudData.tripItems) {
+          await this.put('tripItems', ti, false);
         }
       }
 

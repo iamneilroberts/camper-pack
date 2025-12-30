@@ -37,23 +37,29 @@
             <span class="action-icon">&#x1F4CB;</span>
             <span class="action-label">New Trip</span>
           </button>
-          <button class="action-card" data-action="current-trip">
-            <span class="action-icon">&#x2705;</span>
-            <span class="action-label">Packing List</span>
-          </button>
           <button class="action-card" data-action="inventory">
             <span class="action-icon">&#x1F4E6;</span>
             <span class="action-label">Inventory</span>
           </button>
-          <button class="action-card" data-action="pre-departure">
-            <span class="action-icon">&#x1F6A8;</span>
-            <span class="action-label">Pre-Departure</span>
-          </button>
         </div>
 
-        <div id="current-trip-summary" class="trip-summary hidden">
+        <!-- Trip Templates Section -->
+        <div class="home-section">
+          <h3>Trip Templates</h3>
+          <p class="section-hint">Configure which items to pack for each trip type</p>
+          <div id="home-templates-list" class="templates-grid"></div>
+        </div>
+
+        <!-- Current/Active Trip -->
+        <div id="current-trip-section" class="home-section hidden">
           <h3>Current Trip</h3>
-          <div class="trip-info"></div>
+          <div id="current-trip-card" class="trip-card"></div>
+        </div>
+
+        <!-- All Trips Section -->
+        <div class="home-section">
+          <h3>Your Trips</h3>
+          <div id="trips-list" class="trips-list"></div>
         </div>
       </section>
 
@@ -249,36 +255,18 @@
           </div>
         </div>
 
-        <div class="packing-sections">
-          <!-- Critical Items -->
-          <div class="packing-section critical">
-            <h3>Critical Items</h3>
-            <div id="critical-items" class="checklist"></div>
-          </div>
-
-          <!-- Items to Pack from House -->
-          <div class="packing-section">
-            <h3>Pack from House</h3>
-            <div id="house-items" class="checklist"></div>
-          </div>
-
-          <!-- Items Already in Trailer/Truck (Verify) -->
-          <div class="packing-section">
-            <h3>Verify in Trailer/Truck</h3>
-            <div id="permanent-items" class="checklist"></div>
-          </div>
-
-          <!-- Purchase Items -->
-          <div class="packing-section">
-            <h3>Purchase Before Trip</h3>
-            <div id="purchase-before" class="checklist"></div>
-          </div>
-
-          <div class="packing-section">
-            <h3>Can Purchase After Arrival</h3>
-            <div id="purchase-after" class="checklist"></div>
-          </div>
+        <!-- Sort Options -->
+        <div class="packing-sort-bar">
+          <label>View by:</label>
+          <select id="packing-sort" onchange="trips.changeSortMode(this.value)">
+            <option value="workflow">Packing Workflow</option>
+            <option value="location">Storage Location</option>
+            <option value="category">Category</option>
+          </select>
         </div>
+
+        <!-- Packing sections container - content rendered by JS -->
+        <div id="packing-sections" class="packing-sections"></div>
 
         <button id="pre-departure-btn" class="btn btn-warning btn-block">
           Pre-Departure Check
@@ -386,6 +374,7 @@
 
   <script src="/js/db.js"></script>
   <script src="/js/inventory.js"></script>
+  <script src="/js/templates.js"></script>
   <script src="/js/trips.js"></script>
   <script src="/js/camera.js"></script>
   <script src="/js/app.js"></script>

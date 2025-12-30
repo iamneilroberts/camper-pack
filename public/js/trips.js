@@ -6,11 +6,14 @@ class TripsManager {
   constructor() {
     this.currentTrip = null;
     this.tripItems = [];
+    this.sortMode = 'workflow'; // workflow, location, category
+    this.locations = [];
   }
 
   async init() {
     this.bindEvents();
-    await this.loadCurrentTrip();
+    this.locations = await window.db.getAllLocations();
+    await this.loadHomeScreen();
   }
 
   bindEvents() {
@@ -38,45 +41,143 @@ class TripsManager {
     }
   }
 
-  async loadCurrentTrip() {
-    this.currentTrip = await window.db.getCurrentTrip();
-    this.updateTripSummary();
-
-    if (this.currentTrip) {
-      await this.loadPackingList();
-    }
+  async loadHomeScreen() {
+    await this.renderTemplatesList();
+    await this.renderTripsList();
+    await this.loadCurrentTrip();
   }
 
-  updateTripSummary() {
-    const summary = document.getElementById('current-trip-summary');
-    const info = summary?.querySelector('.trip-info');
+  async renderTemplatesList() {
+    const container = document.getElementById('home-templates-list');
+    if (!container) return;
 
-    if (!summary || !info) return;
+    const templates = await window.db.getAllTemplates();
+
+    if (templates.length === 0) {
+      container.innerHTML = '<p class="empty-text">No templates found</p>';
+      return;
+    }
+
+    // Get item counts for each template
+    const templateHtml = await Promise.all(templates.map(async (template) => {
+      const templateItems = await window.db.getTemplateItems(template.id);
+      const itemCount = templateItems.length;
+
+      return `
+        <div class="template-card" onclick="templates.showTemplateEditor('${template.id}')">
+          <div class="template-name">${this.escapeHtml(template.name)}</div>
+          <div class="template-meta">${itemCount} items</div>
+        </div>
+      `;
+    }));
+
+    container.innerHTML = templateHtml.join('');
+  }
+
+  async renderTripsList() {
+    const container = document.getElementById('trips-list');
+    if (!container) return;
+
+    const trips = await window.db.getAllTrips();
+
+    if (trips.length === 0) {
+      container.innerHTML = '<p class="empty-text">No trips yet. Create one to get started!</p>';
+      return;
+    }
+
+    // Sort trips: active first, then by date descending
+    trips.sort((a, b) => {
+      const statusOrder = { planning: 0, packing: 1, traveling: 2, completed: 3 };
+      const statusDiff = (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
+      if (statusDiff !== 0) return statusDiff;
+      return new Date(b.start_date) - new Date(a.start_date);
+    });
+
+    container.innerHTML = trips.map(trip => this.renderTripCard(trip)).join('');
+  }
+
+  renderTripCard(trip) {
+    const startDate = trip.start_date ? new Date(trip.start_date).toLocaleDateString() : '';
+    const endDate = trip.end_date ? new Date(trip.end_date).toLocaleDateString() : '';
+    const dateRange = startDate && endDate ? `${startDate} - ${endDate}` : '';
+
+    const statusLabels = {
+      planning: 'Planning',
+      packing: 'Packing',
+      traveling: 'Traveling',
+      completed: 'Completed'
+    };
+
+    const statusClass = trip.status || 'planning';
+
+    return `
+      <div class="trip-list-card ${statusClass}" onclick="trips.openTrip('${trip.id}')">
+        <div class="trip-card-content">
+          <div class="trip-card-name">${this.escapeHtml(trip.name)}</div>
+          <div class="trip-card-details">
+            ${trip.destination ? `<span class="trip-destination">${this.escapeHtml(trip.destination)}</span>` : ''}
+            ${dateRange ? `<span class="trip-dates">${dateRange}</span>` : ''}
+          </div>
+        </div>
+        <div class="trip-card-status">
+          <span class="status-badge ${statusClass}">${statusLabels[trip.status] || trip.status}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  async openTrip(tripId) {
+    const trip = await window.db.getTrip(tripId);
+    if (!trip) return;
+
+    this.currentTrip = trip;
+    await this.loadPackingList();
+    window.app.showScreen('packing');
+  }
+
+  async loadCurrentTrip() {
+    this.currentTrip = await window.db.getCurrentTrip();
+
+    const section = document.getElementById('current-trip-section');
+    const card = document.getElementById('current-trip-card');
+
+    if (!section || !card) return;
 
     if (this.currentTrip) {
-      summary.classList.remove('hidden');
-      const start = new Date(this.currentTrip.start_date).toLocaleDateString();
-      const end = new Date(this.currentTrip.end_date).toLocaleDateString();
-      info.innerHTML = `
-        <strong>${this.escapeHtml(this.currentTrip.name)}</strong><br>
-        ${start} - ${end}<br>
-        ${this.currentTrip.destination ? this.escapeHtml(this.currentTrip.destination) : ''}
-      `;
+      section.classList.remove('hidden');
+      card.innerHTML = this.renderTripCard(this.currentTrip);
+      await this.loadPackingList();
     } else {
-      summary.classList.add('hidden');
+      section.classList.add('hidden');
     }
   }
 
   async handleTripSubmit(e) {
     e.preventDefault();
 
+    const templateId = document.getElementById('trip-template').value;
+    if (!templateId) {
+      alert('Please select a trip template');
+      return;
+    }
+
+    // Check if template has items
+    const templateItems = await window.db.getTemplateItems(templateId);
+    if (templateItems.length === 0) {
+      const proceed = confirm('This template has no items configured. Would you like to configure it first?');
+      if (proceed) {
+        window.templates.showTemplateEditor(templateId);
+        return;
+      }
+    }
+
     const trip = {
       name: document.getElementById('trip-name').value.trim(),
-      template_id: document.getElementById('trip-template').value,
+      template_id: templateId,
       start_date: document.getElementById('trip-start').value,
       end_date: document.getElementById('trip-end').value,
       destination: document.getElementById('trip-destination').value.trim(),
-      status: 'planning'
+      status: 'packing'
     };
 
     const savedTrip = await window.db.saveTrip(trip);
@@ -91,38 +192,33 @@ class TripsManager {
   }
 
   async generatePackingList(trip) {
-    // Get all items
-    const items = await window.db.getAllItems();
+    // Get items from template
+    const templateItems = await window.db.getTemplateItems(trip.template_id);
 
-    // Calculate trip duration
-    const startDate = new Date(trip.start_date);
-    const endDate = new Date(trip.end_date);
-    const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-
-    // Get template
-    const template = await window.db.getTemplate(trip.template_id);
-    const clothingMultiplier = template?.clothing_multiplier || 1.0;
-
-    for (const item of items) {
-      // Skip items with no location (not fully set up)
-      if (!item.storage_location) continue;
-
-      // Calculate quantity needed based on category and duration
-      let quantityNeeded = item.quantity || 1;
-
-      if (item.category === 'clothing' && clothingMultiplier > 0) {
-        quantityNeeded = Math.ceil(duration * clothingMultiplier * (item.quantity || 1));
+    if (templateItems.length === 0) {
+      // Fallback: use all items if template is empty
+      const allItems = await window.db.getAllItems();
+      for (const item of allItems) {
+        if (!item.storage_location) continue;
+        await window.db.saveTripItem({
+          trip_id: trip.id,
+          item_id: item.id,
+          packed: 0
+        });
       }
+      return;
+    }
 
-      const tripItem = {
+    // Get full item details and create trip items
+    for (const ti of templateItems) {
+      const item = await window.db.getItem(ti.item_id);
+      if (!item) continue;
+
+      await window.db.saveTripItem({
         trip_id: trip.id,
         item_id: item.id,
-        quantity_needed: quantityNeeded,
-        packed: 0,
-        notes: null
-      };
-
-      await window.db.saveTripItem(tripItem);
+        packed: 0
+      });
     }
   }
 
@@ -145,6 +241,11 @@ class TripsManager {
     this.renderPreDepartureList();
   }
 
+  changeSortMode(mode) {
+    this.sortMode = mode;
+    this.renderPackingList();
+  }
+
   renderPackingList() {
     const tripName = document.getElementById('packing-trip-name');
     if (tripName && this.currentTrip) {
@@ -158,43 +259,162 @@ class TripsManager {
     document.getElementById('packed-count').textContent = packedCount;
     document.getElementById('total-count').textContent = totalCount;
 
-    // Get locations for grouping
-    const locations = window.db.locations || [];
-    const locationsMap = new Map(locations.map(l => [l.id, l]));
-
-    // Group items
-    const critical = this.tripItems.filter(ti => ti.item.is_critical);
-    const houseItems = this.tripItems.filter(ti =>
-      ti.item.storage_location === 'house' ||
-      (!ti.item.is_permanent && locationsMap.get(ti.item.storage_location)?.area !== 'house')
-    );
-    const permanent = this.tripItems.filter(ti => ti.item.is_permanent);
-    const purchaseBefore = this.tripItems.filter(ti => ti.item.purchase_timing === 'before_arrival');
-    const purchaseAfter = this.tripItems.filter(ti => ti.item.purchase_timing === 'after_arrival');
-
-    // Render each section
-    this.renderChecklistSection('critical-items', critical);
-    this.renderChecklistSection('house-items', houseItems.filter(ti => !ti.item.is_critical));
-    this.renderChecklistSection('permanent-items', permanent.filter(ti => !ti.item.is_critical));
-    this.renderChecklistSection('purchase-before', purchaseBefore);
-    this.renderChecklistSection('purchase-after', purchaseAfter);
-  }
-
-  renderChecklistSection(containerId, items) {
-    const container = document.getElementById(containerId);
+    const container = document.getElementById('packing-sections');
     if (!container) return;
 
-    if (items.length === 0) {
-      container.innerHTML = '<p class="empty-text">No items</p>';
-      return;
+    // Render based on sort mode
+    switch (this.sortMode) {
+      case 'location':
+        this.renderByLocation(container);
+        break;
+      case 'category':
+        this.renderByCategory(container);
+        break;
+      default:
+        this.renderByWorkflow(container);
+    }
+  }
+
+  renderByWorkflow(container) {
+    // Get locations for grouping
+    const locationsMap = new Map(this.locations.map(l => [l.id, l]));
+
+    // Group items by workflow phase
+    const critical = this.tripItems.filter(ti => ti.item.is_critical);
+    const houseItems = this.tripItems.filter(ti =>
+      ti.item.storage_location === 'house' && !ti.item.is_critical
+    );
+    const permanent = this.tripItems.filter(ti =>
+      ti.item.is_permanent && !ti.item.is_critical
+    );
+    const purchaseBefore = this.tripItems.filter(ti =>
+      ti.item.purchase_timing === 'before_arrival' && !ti.item.is_critical
+    );
+    const purchaseAfter = this.tripItems.filter(ti =>
+      ti.item.purchase_timing === 'after_arrival'
+    );
+
+    let html = '';
+
+    if (critical.length > 0) {
+      html += this.renderSection('Critical Items', critical, 'critical');
+    }
+    if (houseItems.length > 0) {
+      html += this.renderSection('Pack from House', houseItems);
+    }
+    if (permanent.length > 0) {
+      html += this.renderSection('Verify in Trailer/Truck', permanent);
+    }
+    if (purchaseBefore.length > 0) {
+      html += this.renderSection('Purchase Before Trip', purchaseBefore);
+    }
+    if (purchaseAfter.length > 0) {
+      html += this.renderSection('Can Purchase After Arrival', purchaseAfter);
     }
 
-    container.innerHTML = items.map(ti => this.renderChecklistItem(ti)).join('');
+    container.innerHTML = html || '<p class="empty-text">No items in packing list</p>';
+    this.bindChecklistEvents(container);
+  }
 
-    // Add click handlers
-    container.querySelectorAll('.checklist-item').forEach(el => {
-      el.addEventListener('click', () => this.togglePacked(el.dataset.id));
+  renderByLocation(container) {
+    // Sort locations by area then sort_order
+    const sortedLocations = [...this.locations].sort((a, b) => {
+      const areaOrder = { house: 0, truck: 1, trailer: 2 };
+      const areaDiff = (areaOrder[a.area] || 99) - (areaOrder[b.area] || 99);
+      if (areaDiff !== 0) return areaDiff;
+      return (a.sort_order || 0) - (b.sort_order || 0);
     });
+
+    // Group items by location
+    const itemsByLocation = {};
+    for (const ti of this.tripItems) {
+      const loc = ti.item.storage_location || 'unknown';
+      if (!itemsByLocation[loc]) {
+        itemsByLocation[loc] = [];
+      }
+      itemsByLocation[loc].push(ti);
+    }
+
+    let html = '';
+    let currentArea = null;
+
+    for (const loc of sortedLocations) {
+      const items = itemsByLocation[loc.id];
+      if (!items || items.length === 0) continue;
+
+      // Add area header if changed
+      if (loc.area !== currentArea) {
+        currentArea = loc.area;
+        const areaNames = { house: 'House', truck: 'Truck', trailer: 'Trailer' };
+        html += `<div class="area-header">${areaNames[currentArea] || currentArea}</div>`;
+      }
+
+      html += this.renderSection(loc.name, items);
+    }
+
+    container.innerHTML = html || '<p class="empty-text">No items in packing list</p>';
+    this.bindChecklistEvents(container);
+  }
+
+  renderByCategory(container) {
+    const categoryNames = {
+      clothing: 'Clothing',
+      toiletries: 'Toiletries',
+      meds: 'Medicines',
+      pet: 'Pet Supplies',
+      electronics: 'Electronics',
+      food: 'Food & Drinks',
+      gear: 'Camping Gear',
+      kitchen: 'Kitchen Items',
+      bedding: 'Bedding',
+      tools: 'Tools',
+      other: 'Other'
+    };
+
+    // Group items by category
+    const itemsByCategory = {};
+    for (const ti of this.tripItems) {
+      const cat = ti.item.category || 'other';
+      if (!itemsByCategory[cat]) {
+        itemsByCategory[cat] = [];
+      }
+      itemsByCategory[cat].push(ti);
+    }
+
+    // Sort categories
+    const categories = Object.keys(itemsByCategory).sort((a, b) => {
+      const nameA = categoryNames[a] || a;
+      const nameB = categoryNames[b] || b;
+      return nameA.localeCompare(nameB);
+    });
+
+    let html = '';
+
+    for (const cat of categories) {
+      const items = itemsByCategory[cat];
+      const catName = categoryNames[cat] || cat;
+      html += this.renderSection(catName, items);
+    }
+
+    container.innerHTML = html || '<p class="empty-text">No items in packing list</p>';
+    this.bindChecklistEvents(container);
+  }
+
+  renderSection(title, items, extraClass = '') {
+    // Sort items: unpacked first, then by name
+    items.sort((a, b) => {
+      if (a.packed !== b.packed) return a.packed - b.packed;
+      return a.item.name.localeCompare(b.item.name);
+    });
+
+    return `
+      <div class="packing-section ${extraClass}">
+        <h3>${title} <span class="section-count">(${items.filter(i => i.packed).length}/${items.length})</span></h3>
+        <div class="checklist">
+          ${items.map(ti => this.renderChecklistItem(ti)).join('')}
+        </div>
+      </div>
+    `;
   }
 
   renderChecklistItem(tripItem) {
@@ -202,16 +422,25 @@ class TripsManager {
     const icon = item.icon || this.getCategoryIcon(item.category);
     const location = this.getLocationName(item.storage_location);
 
+    const badges = [];
+    if (item.is_critical) badges.push('<span class="badge-sm critical">!</span>');
+
     return `
       <div class="checklist-item ${tripItem.packed ? 'checked' : ''}" data-id="${tripItem.id}">
         <div class="checklist-checkbox"></div>
         <div class="checklist-icon">${icon}</div>
         <div class="checklist-info">
-          <div class="checklist-name">${this.escapeHtml(item.name)}</div>
+          <div class="checklist-name">${this.escapeHtml(item.name)} ${badges.join('')}</div>
           <div class="checklist-location">${location}</div>
         </div>
       </div>
     `;
+  }
+
+  bindChecklistEvents(container) {
+    container.querySelectorAll('.checklist-item').forEach(el => {
+      el.addEventListener('click', () => this.togglePacked(el.dataset.id));
+    });
   }
 
   async togglePacked(tripItemId) {
@@ -286,15 +515,14 @@ class TripsManager {
     this.currentTrip.status = 'traveling';
     await window.db.saveTrip(this.currentTrip);
 
-    alert('🎉 You\'re all set! Have a great trip!');
+    alert('You\'re all set! Have a great trip!');
     window.app.showScreen('home');
-    await this.loadCurrentTrip();
+    await this.loadHomeScreen();
   }
 
   getLocationName(locationId) {
     if (!locationId) return 'No location';
-    const locations = window.db.locations || [];
-    const location = locations.find(l => l.id === locationId);
+    const location = this.locations.find(l => l.id === locationId);
     return location?.name || locationId;
   }
 
@@ -332,7 +560,7 @@ class TripsManager {
     this.tripItems = [];
 
     window.app.showScreen('home');
-    this.updateTripSummary();
+    await this.loadHomeScreen();
   }
 }
 
