@@ -241,12 +241,19 @@ class CamperPackApp {
     try {
       const result = await window.db.syncWithCloud();
       if (result.success) {
-        console.log(`Synced ${result.synced} items`);
+        const msg = `Sync complete!\nPushed: ${result.pushed || 0} items\nPulled: ${result.pulled || 0} items`;
+        alert(msg);
+
+        // Refresh inventory if on that screen
+        if (window.inventory) {
+          await window.inventory.loadInventory();
+        }
       } else {
-        console.warn('Sync failed:', result.reason);
+        alert('Sync failed: ' + (result.reason || 'Unknown error'));
       }
     } catch (error) {
       console.error('Sync error:', error);
+      alert('Sync error: ' + error.message);
     } finally {
       if (syncIcon) {
         syncIcon.classList.remove('syncing');

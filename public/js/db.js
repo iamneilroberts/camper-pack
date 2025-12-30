@@ -303,7 +303,7 @@ class CamperPackDB {
     }
   }
 
-  // Sync with cloud
+  // Sync with cloud (bidirectional)
   async syncWithCloud() {
     if (!this.isOnline) {
       console.log('Offline - sync skipped');
@@ -311,42 +311,70 @@ class CamperPackDB {
     }
 
     try {
+      // Step 1: Push local changes to cloud
       const pending = await this.getPendingSyncItems();
+      let pushed = 0;
 
-      if (pending.length === 0) {
-        console.log('No pending sync items');
-        return { success: true, synced: 0 };
+      if (pending.length > 0) {
+        const pushResponse = await fetch('/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ changes: pending })
+        });
+
+        if (pushResponse.ok) {
+          // Mark items as synced
+          for (const item of pending) {
+            await this.markSynced(item.id);
+          }
+          await this.clearSyncedItems();
+          pushed = pending.length;
+        }
       }
 
-      const response = await fetch('/api/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ changes: pending })
+      // Step 2: Pull all data from cloud
+      const pullResponse = await fetch('/api/sync', {
+        method: 'GET'
       });
 
-      if (!response.ok) {
-        throw new Error('Sync failed');
+      if (!pullResponse.ok) {
+        throw new Error('Failed to pull from cloud');
       }
 
-      const result = await response.json();
+      const cloudData = await pullResponse.json();
+      let pulled = 0;
 
-      // Mark items as synced
-      for (const item of pending) {
-        await this.markSynced(item.id);
+      // Merge cloud data into local (cloud wins for conflicts)
+      if (cloudData.items && cloudData.items.length > 0) {
+        for (const item of cloudData.items) {
+          await this.put('items', item, false); // Don't re-queue for sync
+          pulled++;
+        }
       }
 
-      // Apply any changes from server
-      if (result.serverChanges) {
-        await this.applyServerChanges(result.serverChanges);
+      if (cloudData.templates && cloudData.templates.length > 0) {
+        for (const template of cloudData.templates) {
+          await this.put('templates', template, false);
+        }
       }
 
-      // Clean up synced items
-      await this.clearSyncedItems();
+      if (cloudData.trips && cloudData.trips.length > 0) {
+        for (const trip of cloudData.trips) {
+          await this.put('trips', trip, false);
+        }
+      }
+
+      if (cloudData.locations && cloudData.locations.length > 0) {
+        for (const location of cloudData.locations) {
+          await this.put('locations', location, false);
+        }
+      }
 
       // Update last sync time
       localStorage.setItem('lastSync', new Date().toISOString());
 
-      return { success: true, synced: pending.length };
+      console.log(`Sync complete: pushed ${pushed}, pulled ${pulled} items`);
+      return { success: true, pushed, pulled };
     } catch (error) {
       console.error('Sync error:', error);
       return { success: false, reason: error.message };
