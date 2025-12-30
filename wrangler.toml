@@ -7,5 +7,4 @@ binding = "CAMPER_DB"
 database_name = "camper-pack"
 database_id = "ccdf078f-3766-4eeb-ad1f-d8986c2a4c7a"
 
-[vars]
-ANTHROPIC_API_KEY = ""  # Will be set as secret for production
+# Environment variables are set in Cloudflare Dashboard as secrets

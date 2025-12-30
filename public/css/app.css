@@ -704,6 +704,12 @@ form {
   width: 100%;
 }
 
+.settings-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
 /* Bottom Navigation */
 .bottom-nav {
   position: fixed;

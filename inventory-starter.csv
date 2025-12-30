@@ -1,0 +1,192 @@
+name,category,storage_location,is_permanent,is_critical,purchase_timing,icon,quantity,notes
+# ===== TRAILER - PASS-THRU MAIN =====
+Leveling blocks,gear,pass_thru_main,1,1,,,4,Lynx or similar
+Wheel chocks,gear,pass_thru_main,1,1,,,2,
+Sewer hose kit,gear,pass_thru_main,1,1,,,1,With connectors and gloves
+Fresh water hose (white),gear,pass_thru_main,1,1,,,1,25-50ft drinking water safe
+Water pressure regulator,gear,pass_thru_main,1,1,,,1,
+30A extension cord,gear,pass_thru_main,1,0,,,1,
+30A to 15A adapter,gear,pass_thru_main,1,0,,,1,
+Outdoor chairs,gear,pass_thru_main,1,0,,,2,Folding camp chairs
+Outdoor mat/rug,gear,pass_thru_main,1,0,,,1,
+Folding table,gear,pass_thru_main,1,0,,,1,
+Electric water pump,gear,pass_thru_main,1,0,,,1,For filling fresh tank
+# ===== TRAILER - PASS-THRU SMALL =====
+Tool bag,tools,pass_thru_small,1,0,,,1,Basic tools
+Flashlight (large),gear,pass_thru_small,1,0,,🔦,1,
+Jumper cables,tools,pass_thru_small,1,0,,,1,
+Tire pressure gauge,tools,pass_thru_small,1,0,,,1,
+WD-40,tools,pass_thru_small,1,0,,,1,
+Duct tape,tools,pass_thru_small,1,0,,,1,
+Zip ties,tools,pass_thru_small,1,0,,,1,Assorted sizes
+# ===== TRAILER - PANTRY =====
+Paper towels,kitchen,pantry,0,0,before_arrival,,2,
+Dish soap,kitchen,pantry,1,0,,,1,
+Trash bags,kitchen,pantry,0,0,before_arrival,,1,Box
+Aluminum foil,kitchen,pantry,1,0,,,1,
+Plastic wrap,kitchen,pantry,1,0,,,1,
+Ziplock bags,kitchen,pantry,1,0,,,1,Various sizes
+Coffee,food,pantry,0,0,before_arrival,,1,
+Sugar,food,pantry,0,0,before_arrival,,1,
+Salt & pepper,food,pantry,1,0,,,1,
+Cooking oil,food,pantry,0,0,before_arrival,,1,
+Canned goods,food,pantry,0,0,before_arrival,,6,
+# ===== TRAILER - KITCHEN OVERHEAD =====
+Plates,kitchen,kitchen_overhead,1,0,,,4,
+Bowls,kitchen,kitchen_overhead,1,0,,,4,
+Cups/mugs,kitchen,kitchen_overhead,1,0,,,4,
+Wine glasses,kitchen,kitchen_overhead,1,0,,,2,Plastic/silicone
+# ===== TRAILER - TV CABINET =====
+TV remote,electronics,tv_cabinet,1,0,,,1,
+Streaming device,electronics,tv_cabinet,1,0,,,1,Roku/Firestick
+HDMI cable,electronics,tv_cabinet,1,0,,,1,
+# ===== TRAILER - UNDER TABLE =====
+Board games,gear,under_table,1,0,,,2,
+Playing cards,gear,under_table,1,0,,,1,
+# ===== TRAILER - KITCHEN DRAWER 1 (utensils) =====
+Forks,kitchen,kitchen_drawer_1,1,0,,,4,
+Knives (eating),kitchen,kitchen_drawer_1,1,0,,,4,
+Spoons,kitchen,kitchen_drawer_1,1,0,,,4,
+Serving spoons,kitchen,kitchen_drawer_1,1,0,,,2,
+Spatula,kitchen,kitchen_drawer_1,1,0,,,1,
+Tongs,kitchen,kitchen_drawer_1,1,0,,,1,
+Can opener,kitchen,kitchen_drawer_1,1,0,,,1,
+Bottle opener,kitchen,kitchen_drawer_1,1,0,,,1,
+# ===== TRAILER - KITCHEN DRAWER 2 (cooking) =====
+Pot holders,kitchen,kitchen_drawer_2,1,0,,,2,
+Kitchen towels,kitchen,kitchen_drawer_2,1,0,,,2,
+Cutting board,kitchen,kitchen_drawer_2,1,0,,,1,
+Sharp knife,kitchen,kitchen_drawer_2,1,0,,,1,
+Measuring cups,kitchen,kitchen_drawer_2,1,0,,,1,Set
+# ===== TRAILER - KITCHEN DRAWER 3 =====
+Lighter/matches,kitchen,kitchen_drawer_3,1,0,,,1,
+Flashlight (small),gear,kitchen_drawer_3,1,0,,🔦,1,
+Batteries,electronics,kitchen_drawer_3,1,0,,,1,Assorted
+# ===== TRAILER - KITCHEN DRAWER 4 =====
+Pens/pencils,other,kitchen_drawer_4,1,0,,,2,
+Notepad,other,kitchen_drawer_4,1,0,,,1,
+Campground info,other,kitchen_drawer_4,0,0,,,1,Printed reservations
+# ===== TRAILER - UNDER SINK =====
+Dish sponge,kitchen,under_sink,1,0,,,2,
+Cleaning spray,kitchen,under_sink,1,0,,,1,
+Trash can liners,kitchen,under_sink,1,0,,,1,Small roll
+Hand soap,toiletries,under_sink,1,0,,,1,
+# ===== TRAILER - KITCHEN COUNTER =====
+Coffee maker,kitchen,kitchen_counter,1,0,,,1,Or pour-over
+Toaster,kitchen,kitchen_counter,1,0,,,1,
+# ===== TRAILER - FRIDGE =====
+Ice packs,food,fridge,1,0,,,2,
+Condiments,food,fridge,0,0,before_arrival,,1,Ketchup/mustard/etc
+Butter,food,fridge,0,0,before_arrival,,1,
+Eggs,food,fridge,0,0,before_arrival,,1,Dozen
+Milk/creamer,food,fridge,0,0,before_arrival,,1,
+Deli meat,food,fridge,0,0,before_arrival,,1,
+Cheese,food,fridge,0,0,before_arrival,,1,
+Beverages,food,fridge,0,0,before_arrival,,6,
+# ===== TRAILER - KEY HOOKS =====
+Trailer keys,other,key_hooks,1,1,,,1,
+Truck keys (spare),other,key_hooks,0,0,,,1,
+# ===== TRAILER - WALL HOOKS =====
+Dog leashes,pet,wall_hooks,0,1,,,2,One per dog - CRITICAL
+Jacket/hoodie,clothing,wall_hooks,0,0,,,1,
+# ===== TRAILER - BATHROOM CABINET =====
+Toilet paper,toiletries,bathroom_cabinet,0,0,before_arrival,,4,RV-safe
+Hand towels,toiletries,bathroom_cabinet,1,0,,,2,
+Washcloths,toiletries,bathroom_cabinet,1,0,,,4,
+Cleaning wipes,toiletries,bathroom_cabinet,1,0,,,1,
+# ===== TRAILER - MEDICINE CABINET =====
+First aid kit,meds,medicine_cabinet,1,1,,🩹,1,
+Pain relievers,meds,medicine_cabinet,1,0,,💊,1,Ibuprofen/Tylenol
+Allergy medicine,meds,medicine_cabinet,1,0,,💊,1,Benadryl/Claritin
+Antacids,meds,medicine_cabinet,1,0,,💊,1,
+Band-aids,meds,medicine_cabinet,1,0,,🩹,1,
+Sunscreen,toiletries,medicine_cabinet,1,0,,,1,
+Bug spray,toiletries,medicine_cabinet,1,0,,,1,
+# ===== TRAILER - SHOWER =====
+Shampoo,toiletries,shower,0,0,,,1,Travel size
+Conditioner,toiletries,shower,0,0,,,1,Travel size
+Body wash,toiletries,shower,0,0,,,1,
+Shower squeegee,toiletries,shower,1,0,,,1,
+# ===== TRAILER - LEFT BEDSIDE =====
+Phone charger,electronics,left_bedside,0,0,,,1,
+Reading light,electronics,left_bedside,1,0,,,1,
+Book/e-reader,other,left_bedside,0,0,,,1,
+# ===== TRAILER - RIGHT BEDSIDE =====
+Phone charger,electronics,right_bedside,0,0,,,1,
+Flashlight,gear,right_bedside,1,0,,🔦,1,Small
+# ===== TRAILER - UNDER BED =====
+Sheets (fitted),bedding,under_bed,1,0,,,2,
+Sheets (flat),bedding,under_bed,1,0,,,2,
+Pillows,bedding,under_bed,1,0,,,2,
+Blanket,bedding,under_bed,1,0,,,1,
+Comforter/quilt,bedding,under_bed,1,0,,,1,
+Extra towels,bedding,under_bed,1,0,,,4,
+# ===== TRUCK - CONSOLE =====
+Sunglasses,other,console,0,0,,,1,
+Phone mount,electronics,console,1,0,,,1,
+USB cable,electronics,console,1,0,,,1,
+Napkins,other,console,1,0,,,1,
+# ===== TRUCK - GLOVE COMPARTMENT =====
+Registration,other,glove_compartment,1,1,,,1,
+Insurance card,other,glove_compartment,1,1,,,1,
+Owner's manual,other,glove_compartment,1,0,,,1,
+Tire gauge,tools,glove_compartment,1,0,,,1,
+Flashlight,gear,glove_compartment,1,0,,🔦,1,
+# ===== TRUCK - FRONT CAB =====
+Water bottle,food,front_cab,0,0,,,2,
+Snacks,food,front_cab,0,0,before_arrival,,1,Road snacks
+Tissues,toiletries,front_cab,1,0,,,1,
+# ===== TRUCK - REAR POCKETS =====
+Maps/atlas,other,rear_pockets,1,0,,,1,Backup to GPS
+Umbrella,gear,rear_pockets,1,0,,,1,
+First aid kit (truck),meds,rear_pockets,1,0,,🩹,1,Small kit
+# ===== TRUCK - REAR UNDER SEAT =====
+Jumper pack,tools,rear_under_seat,1,0,,,1,Portable jump starter
+Recovery straps,tools,rear_under_seat,1,0,,,1,
+Tow hooks,tools,rear_under_seat,1,0,,,2,
+# ===== TRUCK - REAR SEAT =====
+Cooler,food,rear_seat,0,0,,,1,For travel snacks
+Dog beds,pet,rear_seat,0,1,,,2,One per dog - for truck travel
+# ===== TRUCK - TRUCK BED =====
+Hitch lock,gear,truck_bed,1,1,,,1,
+Weight distribution hitch,gear,truck_bed,1,1,,,1,
+Hitch ball,gear,truck_bed,1,0,,,1,
+# ===== TRUCK - BED TRUNK =====
+Recovery gear,tools,bed_trunk,1,0,,,1,
+Tow straps,tools,bed_trunk,1,0,,,2,
+Fire extinguisher,gear,bed_trunk,1,1,,,1,
+# ===== HOUSE - PACK BEFORE TRIP =====
+Kim's meds,meds,house,0,1,,💊,1,CRITICAL - prescription medications
+Wallet,other,house,0,1,,,1,
+Phone,electronics,house,0,1,,📱,1,
+Laptop,electronics,house,0,0,,💻,1,
+Camera,electronics,house,0,0,,📷,1,
+Hiking boots,clothing,house,0,1,,🥾,1,CRITICAL for hiking trips
+Daypack,gear,house,0,0,,🎒,1,For hiking trips
+Sandals,clothing,house,0,0,,,1,
+Underwear,clothing,house,0,0,,,7,Per trip length
+Socks,clothing,house,0,0,,,7,Per trip length
+T-shirts,clothing,house,0,0,,👕,5,
+Shorts,clothing,house,0,0,,,3,
+Pants/jeans,clothing,house,0,0,,👖,2,
+Jacket,clothing,house,0,0,,🧥,1,
+Rain jacket,clothing,house,0,0,,,1,
+Hat,clothing,house,0,0,,🧢,1,
+Swimsuit,clothing,house,0,0,,,1,
+Pajamas,clothing,house,0,0,,,2,
+Toothbrush,toiletries,house,0,1,,,1,
+Toothpaste,toiletries,house,0,1,,,1,
+Deodorant,toiletries,house,0,0,,,1,
+Razor,toiletries,house,0,0,,,1,
+Hairbrush,toiletries,house,0,0,,,1,
+Contacts/glasses,toiletries,house,0,1,,👓,1,
+Contact solution,toiletries,house,0,0,,,1,
+Dog food,pet,house,0,1,,🐕,1,Enough for trip
+Dog treats,pet,house,0,0,,🦴,1,
+Dog bowls,pet,house,0,1,,,2,Food and water
+Dog medications,meds,house,0,1,,💊,1,If applicable
+Poop bags,pet,house,0,0,,,1,Roll
+Light-up collars,pet,house,0,1,,,2,One per dog - CRITICAL for night walks
+Dog coats,pet,house,0,0,,,2,For cold weather trips
+Dog towels,pet,house,0,0,,,2,For wet/muddy dogs
+Dog bed (trailer),pet,house,0,0,,,2,Beds for inside trailer

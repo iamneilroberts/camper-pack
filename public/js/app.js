@@ -107,13 +107,47 @@ class CamperPackApp {
       forceSyncBtn.addEventListener('click', () => this.performSync());
     }
 
-    // Export
+    // CSV Export
+    const exportCsvBtn = document.getElementById('export-csv-btn');
+    if (exportCsvBtn) {
+      exportCsvBtn.addEventListener('click', () => window.inventory.exportToCSV());
+    }
+
+    // CSV Import
+    const importCsvBtn = document.getElementById('import-csv-btn');
+    if (importCsvBtn) {
+      importCsvBtn.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.csv';
+        input.onchange = async (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            try {
+              const count = await window.inventory.importFromCSV(file);
+              alert(`Imported ${count} items from CSV`);
+            } catch (err) {
+              alert('CSV Import failed: ' + err.message);
+            }
+          }
+        };
+        input.click();
+      });
+    }
+
+    // Clear inventory
+    const clearBtn = document.getElementById('clear-inventory-btn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => window.inventory.clearInventory());
+    }
+
+    // JSON Export
     const exportBtn = document.getElementById('export-btn');
     if (exportBtn) {
       exportBtn.addEventListener('click', () => window.inventory.exportInventory());
     }
 
-    // Import
+    // JSON Import
     const importBtn = document.getElementById('import-btn');
     if (importBtn) {
       importBtn.addEventListener('click', () => {
@@ -125,9 +159,9 @@ class CamperPackApp {
           if (file) {
             try {
               const count = await window.inventory.importInventory(file);
-              alert(`Imported ${count} items`);
+              alert(`Imported ${count} items from JSON`);
             } catch (err) {
-              alert('Import failed: ' + err.message);
+              alert('JSON Import failed: ' + err.message);
             }
           }
         };

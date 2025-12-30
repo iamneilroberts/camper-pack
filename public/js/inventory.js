@@ -253,6 +253,162 @@ class InventoryManager {
       reader.readAsText(file);
     });
   }
+
+  // Export inventory to CSV
+  async exportToCSV() {
+    const items = await window.db.getAllItems();
+
+    const headers = ['name', 'category', 'storage_location', 'is_permanent', 'is_critical', 'purchase_timing', 'icon', 'quantity', 'notes'];
+
+    const csvRows = [headers.join(',')];
+
+    for (const item of items) {
+      const row = headers.map(header => {
+        let val = item[header] ?? '';
+        // Escape commas and quotes in values
+        if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) {
+          val = '"' + val.replace(/"/g, '""') + '"';
+        }
+        return val;
+      });
+      csvRows.push(row.join(','));
+    }
+
+    const csv = csvRows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `camperpack-inventory-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+
+    URL.revokeObjectURL(url);
+  }
+
+  // Import inventory from CSV
+  async importFromCSV(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const text = e.target.result;
+          const items = this.parseCSV(text);
+
+          let imported = 0;
+          for (const item of items) {
+            if (item.name) { // Skip empty rows
+              await window.db.saveItem(item);
+              imported++;
+            }
+          }
+
+          await this.loadInventory();
+          resolve(imported);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file);
+    });
+  }
+
+  // Parse CSV text into array of objects
+  parseCSV(text) {
+    const lines = text.split('\n');
+    const items = [];
+    let headers = null;
+
+    for (let line of lines) {
+      line = line.trim();
+
+      // Skip empty lines and comments
+      if (!line || line.startsWith('#')) continue;
+
+      // Parse CSV line (handles quoted values)
+      const values = this.parseCSVLine(line);
+
+      // First non-comment line is headers
+      if (!headers) {
+        headers = values.map(h => h.trim().toLowerCase());
+        continue;
+      }
+
+      // Create item object
+      const item = {};
+      headers.forEach((header, i) => {
+        let val = values[i]?.trim() ?? '';
+
+        // Convert numeric fields
+        if (header === 'is_permanent' || header === 'is_critical') {
+          item[header] = val === '1' || val.toLowerCase() === 'true' ? 1 : 0;
+        } else if (header === 'quantity') {
+          item[header] = parseInt(val) || 1;
+        } else if (val === '') {
+          item[header] = null;
+        } else {
+          item[header] = val;
+        }
+      });
+
+      if (item.name) {
+        items.push(item);
+      }
+    }
+
+    return items;
+  }
+
+  // Parse a single CSV line, handling quoted values
+  parseCSVLine(line) {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+
+      if (inQuotes) {
+        if (char === '"' && nextChar === '"') {
+          current += '"';
+          i++; // Skip next quote
+        } else if (char === '"') {
+          inQuotes = false;
+        } else {
+          current += char;
+        }
+      } else {
+        if (char === '"') {
+          inQuotes = true;
+        } else if (char === ',') {
+          values.push(current);
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+    }
+    values.push(current);
+
+    return values;
+  }
+
+  // Clear all inventory (for reimport)
+  async clearInventory() {
+    if (!confirm('Delete ALL inventory items? This cannot be undone.')) {
+      return false;
+    }
+
+    const items = await window.db.getAllItems();
+    for (const item of items) {
+      await window.db.deleteItem(item.id);
+    }
+
+    await this.loadInventory();
+    return true;
+  }
 }
 
 // Export singleton
