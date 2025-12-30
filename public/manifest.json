@@ -1,0 +1,32 @@
+{
+  "name": "CamperPack",
+  "short_name": "CamperPack",
+  "description": "Camper trailer packing list and inventory manager",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#2d5a27",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "lifestyle"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "New Trip",
+      "url": "/?action=new-trip",
+      "icons": [{ "src": "/icons/shortcut-trip.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Inventory",
+      "url": "/?screen=inventory",
+      "icons": [{ "src": "/icons/shortcut-inventory.png", "sizes": "96x96" }]
+    }
+  ]
+}

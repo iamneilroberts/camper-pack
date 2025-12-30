@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#2d5a27">
+  <title>CamperPack</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon.svg">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="app-header">
+      <h1 id="page-title">CamperPack</h1>
+      <div class="header-actions">
+        <button id="sync-btn" class="icon-btn" title="Sync">
+          <span class="sync-icon">&#x21bb;</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main id="main-content">
+      <!-- Home Screen -->
+      <section id="home-screen" class="screen active">
+        <div class="home-hero">
+          <div class="hero-icon">&#x1F3D5;</div>
+          <h2>Ready for your next adventure?</h2>
+        </div>
+
+        <div class="quick-actions">
+          <button class="action-card" data-action="new-trip">
+            <span class="action-icon">&#x1F4CB;</span>
+            <span class="action-label">New Trip</span>
+          </button>
+          <button class="action-card" data-action="current-trip">
+            <span class="action-icon">&#x2705;</span>
+            <span class="action-label">Packing List</span>
+          </button>
+          <button class="action-card" data-action="inventory">
+            <span class="action-icon">&#x1F4E6;</span>
+            <span class="action-label">Inventory</span>
+          </button>
+          <button class="action-card" data-action="pre-departure">
+            <span class="action-icon">&#x1F6A8;</span>
+            <span class="action-label">Pre-Departure</span>
+          </button>
+        </div>
+
+        <div id="current-trip-summary" class="trip-summary hidden">
+          <h3>Current Trip</h3>
+          <div class="trip-info"></div>
+        </div>
+      </section>
+
+      <!-- Inventory Screen -->
+      <section id="inventory-screen" class="screen">
+        <div class="screen-header">
+          <div class="search-bar">
+            <input type="search" id="inventory-search" placeholder="Search items...">
+          </div>
+          <div class="filter-tabs">
+            <button class="filter-tab active" data-filter="all">All</button>
+            <button class="filter-tab" data-filter="trailer">Trailer</button>
+            <button class="filter-tab" data-filter="truck">Truck</button>
+            <button class="filter-tab" data-filter="house">House</button>
+          </div>
+        </div>
+        <div id="inventory-list" class="item-list"></div>
+        <button id="add-item-btn" class="fab">+</button>
+      </section>
+
+      <!-- Add/Edit Item Screen -->
+      <section id="item-form-screen" class="screen">
+        <form id="item-form">
+          <div class="form-group">
+            <label for="item-name">Item Name</label>
+            <input type="text" id="item-name" required>
+          </div>
+
+          <div class="form-group">
+            <label for="item-category">Category</label>
+            <select id="item-category" required>
+              <option value="">Select category...</option>
+              <option value="clothing">Clothing</option>
+              <option value="toiletries">Toiletries</option>
+              <option value="meds">Medicines</option>
+              <option value="pet">Pet Supplies</option>
+              <option value="electronics">Electronics</option>
+              <option value="food">Food & Drinks</option>
+              <option value="gear">Camping Gear</option>
+              <option value="kitchen">Kitchen Items</option>
+              <option value="bedding">Bedding</option>
+              <option value="tools">Tools</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="item-location">Storage Location</label>
+            <select id="item-location">
+              <option value="">Select location...</option>
+              <optgroup label="Trailer">
+                <option value="pass_thru_main">Pass-thru main</option>
+                <option value="pass_thru_small">Pass-thru small</option>
+                <option value="pantry">Pantry</option>
+                <option value="kitchen_overhead">Kitchen overhead</option>
+                <option value="tv_cabinet">TV cabinet</option>
+                <option value="under_table">Under table</option>
+                <option value="kitchen_drawer_1">Kitchen drawer 1</option>
+                <option value="kitchen_drawer_2">Kitchen drawer 2</option>
+                <option value="kitchen_drawer_3">Kitchen drawer 3</option>
+                <option value="kitchen_drawer_4">Kitchen drawer 4</option>
+                <option value="under_sink">Under sink</option>
+                <option value="kitchen_counter">Kitchen counter</option>
+                <option value="in_sink">In sink</option>
+                <option value="fridge">Fridge</option>
+                <option value="key_hooks">Key hooks</option>
+                <option value="wall_hooks">Wall hooks</option>
+                <option value="bathroom_cabinet">Bathroom cabinet</option>
+                <option value="medicine_cabinet">Medicine cabinet</option>
+                <option value="shower">Shower</option>
+                <option value="left_bedside">Left bedside</option>
+                <option value="right_bedside">Right bedside</option>
+                <option value="under_bed">Under bed</option>
+              </optgroup>
+              <optgroup label="Truck">
+                <option value="console">Console</option>
+                <option value="glove_compartment">Glove compartment</option>
+                <option value="front_cab">Front cab</option>
+                <option value="rear_pockets">Rear pockets</option>
+                <option value="rear_under_seat">Rear under seat</option>
+                <option value="rear_seat">Rear seat</option>
+                <option value="truck_bed">Truck bed</option>
+                <option value="bed_trunk">Bed trunk</option>
+              </optgroup>
+              <optgroup label="House">
+                <option value="house">House (pack before trip)</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="item-quantity">Quantity</label>
+              <input type="number" id="item-quantity" min="1" value="1">
+            </div>
+            <div class="form-group half">
+              <label for="item-icon">Icon</label>
+              <input type="text" id="item-icon" placeholder="emoji">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="item-permanent">
+              <span>Permanently stored (always in trailer/truck)</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="item-critical">
+              <span>Critical item (cannot leave without)</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label for="item-purchase">Purchase Timing</label>
+            <select id="item-purchase">
+              <option value="">Not a purchase item</option>
+              <option value="before_arrival">Buy before arriving</option>
+              <option value="after_arrival">Can buy after arriving</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="item-notes">Notes</label>
+            <textarea id="item-notes" rows="2"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" data-action="cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Item</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Trip Templates Screen -->
+      <section id="templates-screen" class="screen">
+        <h2>Trip Templates</h2>
+        <div id="templates-list" class="templates-grid"></div>
+        <button id="add-template-btn" class="fab">+</button>
+      </section>
+
+      <!-- New Trip Screen -->
+      <section id="new-trip-screen" class="screen">
+        <form id="trip-form">
+          <div class="form-group">
+            <label for="trip-name">Trip Name</label>
+            <input type="text" id="trip-name" placeholder="e.g., Big Bend Weekend" required>
+          </div>
+
+          <div class="form-group">
+            <label for="trip-template">Template</label>
+            <select id="trip-template">
+              <option value="">Select template...</option>
+              <option value="weekend">Weekend Trip (2-3 days)</option>
+              <option value="week">Week Trip (5-7 days)</option>
+              <option value="extended">Extended Stay (2+ weeks)</option>
+              <option value="day">Day Trip</option>
+              <option value="special">Special Event</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="trip-start">Start Date</label>
+              <input type="date" id="trip-start" required>
+            </div>
+            <div class="form-group half">
+              <label for="trip-end">End Date</label>
+              <input type="date" id="trip-end" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="trip-destination">Destination</label>
+            <input type="text" id="trip-destination" placeholder="e.g., Big Bend State Park">
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" data-action="cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Trip</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Packing List Screen -->
+      <section id="packing-screen" class="screen">
+        <div class="packing-header">
+          <h2 id="packing-trip-name">Packing List</h2>
+          <div class="packing-progress">
+            <span id="packed-count">0</span> / <span id="total-count">0</span> packed
+          </div>
+        </div>
+
+        <div class="packing-sections">
+          <!-- Critical Items -->
+          <div class="packing-section critical">
+            <h3>Critical Items</h3>
+            <div id="critical-items" class="checklist"></div>
+          </div>
+
+          <!-- Items to Pack from House -->
+          <div class="packing-section">
+            <h3>Pack from House</h3>
+            <div id="house-items" class="checklist"></div>
+          </div>
+
+          <!-- Items Already in Trailer/Truck (Verify) -->
+          <div class="packing-section">
+            <h3>Verify in Trailer/Truck</h3>
+            <div id="permanent-items" class="checklist"></div>
+          </div>
+
+          <!-- Purchase Items -->
+          <div class="packing-section">
+            <h3>Purchase Before Trip</h3>
+            <div id="purchase-before" class="checklist"></div>
+          </div>
+
+          <div class="packing-section">
+            <h3>Can Purchase After Arrival</h3>
+            <div id="purchase-after" class="checklist"></div>
+          </div>
+        </div>
+
+        <button id="pre-departure-btn" class="btn btn-warning btn-block">
+          Pre-Departure Check
+        </button>
+      </section>
+
+      <!-- Pre-Departure Screen -->
+      <section id="pre-departure-screen" class="screen">
+        <div class="pre-departure-header">
+          <h2>Pre-Departure Checklist</h2>
+          <p>Verify these critical items before pulling out!</p>
+        </div>
+
+        <div id="critical-checklist" class="critical-checklist"></div>
+
+        <div id="departure-status" class="departure-status">
+          <div class="status-incomplete">
+            <span class="status-icon">&#x26A0;</span>
+            <span>Some items not verified</span>
+          </div>
+        </div>
+
+        <button id="ready-to-go-btn" class="btn btn-success btn-block btn-large" disabled>
+          READY TO GO!
+        </button>
+      </section>
+
+      <!-- Camera Screen (Stretch Feature) -->
+      <section id="camera-screen" class="screen">
+        <div class="camera-container">
+          <video id="camera-preview" autoplay playsinline></video>
+          <canvas id="camera-canvas" class="hidden"></canvas>
+        </div>
+        <div class="camera-actions">
+          <button id="capture-btn" class="btn btn-primary">Capture</button>
+          <button id="switch-camera-btn" class="btn btn-secondary">Switch Camera</button>
+        </div>
+        <div id="vision-results" class="vision-results hidden"></div>
+      </section>
+
+      <!-- Settings Screen -->
+      <section id="settings-screen" class="screen">
+        <h2>Settings</h2>
+
+        <div class="settings-section">
+          <h3>Sync</h3>
+          <div class="setting-row">
+            <span>Last synced:</span>
+            <span id="last-sync">Never</span>
+          </div>
+          <button id="force-sync-btn" class="btn btn-secondary">Force Sync Now</button>
+        </div>
+
+        <div class="settings-section">
+          <h3>Data</h3>
+          <button id="export-btn" class="btn btn-secondary">Export Data</button>
+          <button id="import-btn" class="btn btn-secondary">Import Data</button>
+        </div>
+
+        <div class="settings-section">
+          <h3>About</h3>
+          <p>CamperPack v1.0.0</p>
+          <p>Offline-first camper packing assistant</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-screen="home">
+        <span class="nav-icon">&#x1F3E0;</span>
+        <span class="nav-label">Home</span>
+      </button>
+      <button class="nav-item" data-screen="inventory">
+        <span class="nav-icon">&#x1F4E6;</span>
+        <span class="nav-label">Inventory</span>
+      </button>
+      <button class="nav-item" data-screen="packing">
+        <span class="nav-icon">&#x2705;</span>
+        <span class="nav-label">Packing</span>
+      </button>
+      <button class="nav-item" data-screen="camera">
+        <span class="nav-icon">&#x1F4F7;</span>
+        <span class="nav-label">Camera</span>
+      </button>
+      <button class="nav-item" data-screen="settings">
+        <span class="nav-icon">&#x2699;</span>
+        <span class="nav-label">Settings</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Offline indicator -->
+  <div id="offline-indicator" class="offline-indicator hidden">
+    You're offline - changes will sync when connected
+  </div>
+
+  <script src="/js/db.js"></script>
+  <script src="/js/inventory.js"></script>
+  <script src="/js/trips.js"></script>
+  <script src="/js/camera.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#2d5a27" rx="64"/>
+  <g fill="#fff">
+    <!-- Camper trailer silhouette -->
+    <rect x="80" y="240" width="280" height="120" rx="10"/>
+    <rect x="320" y="200" width="100" height="160" rx="10"/>
+    <!-- Wheel -->
+    <circle cx="160" cy="360" r="40" fill="#1a1a1a"/>
+    <circle cx="160" cy="360" r="20" fill="#444"/>
+    <!-- Window -->
+    <rect x="340" y="220" width="60" height="40" rx="5" fill="#87ceeb"/>
+    <!-- Hitch -->
+    <rect x="60" y="280" width="30" height="20" fill="#fff"/>
+    <!-- Checkmark -->
+    <path d="M400 100 L440 140 L500 60" stroke="#4a8c41" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+</svg>
