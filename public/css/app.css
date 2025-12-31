@@ -1007,6 +1007,25 @@ form {
   max-width: 340px;
 }
 
+.icon-search-wrapper {
+  margin-bottom: 12px;
+}
+
+.icon-search-wrapper input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.icon-search-wrapper input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
 .icon-picker-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
