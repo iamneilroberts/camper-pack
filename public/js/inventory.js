@@ -1077,9 +1077,31 @@ class InventoryManager {
     // Update visibility based on category
     this.updateTravelerQuantitiesVisibility();
 
+    // Show/hide delete button (only when editing)
+    const deleteSection = document.getElementById('delete-item-section');
+    if (deleteSection) {
+      deleteSection.classList.toggle('hidden', !itemId);
+    }
+
     // Show form screen
     window.app.showScreen('item-form');
     document.getElementById('page-title').textContent = itemId ? 'Edit Item' : 'Add Item';
+  }
+
+  confirmDeleteItem() {
+    if (!this.editingItemId) return;
+
+    if (confirm('Are you sure you want to delete this item? This cannot be undone.')) {
+      this.deleteCurrentItem();
+    }
+  }
+
+  async deleteCurrentItem() {
+    if (!this.editingItemId) return;
+
+    await window.db.deleteItem(this.editingItemId);
+    this.hideItemForm();
+    await this.loadInventory();
   }
 
   hideItemForm() {
