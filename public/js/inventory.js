@@ -5,6 +5,40 @@
 // Personal categories that support per-traveler quantities
 const PERSONAL_CATEGORIES = ['clothing', 'toiletries', 'meds', 'other'];
 
+// Icon choices for the picker - organized by category
+const ICON_CHOICES = [
+  // Camping & Outdoors
+  '🏕️', '⛺', '🔥', '🪵', '🏔️', '🌲', '🌳', '🥾', '🎒', '🧭',
+  '🔦', '🪔', '⛱️', '🌄', '🌅', '🏞️', '🛶', '🚣', '🎣', '🐟',
+  // Vehicles & Travel
+  '🚗', '🚙', '🚐', '🚛', '🚚', '🏎️', '🛻', '⛽', '🗺️', '📍',
+  // Clothing
+  '👕', '👖', '🩳', '👗', '🧥', '🧤', '🧣', '🧦', '👟', '🥿',
+  '👒', '🧢', '👓', '🕶️', '🩱', '👙', '🩴',
+  // Kitchen & Food
+  '🍳', '🥘', '🍲', '🍽️', '🥄', '🔪', '🧊', '🧂', '🫙', '🥫',
+  '🍎', '🥩', '🥗', '☕', '🧃', '🍺', '🧋', '💧', '🫗',
+  // Electronics
+  '🔌', '🔋', '💡', '📱', '💻', '📷', '🎥', '📺', '🔊', '🎧',
+  '📡', '⚡', '🔆',
+  // Toiletries & Medical
+  '🧴', '🧼', '🪥', '🧻', '🩹', '💊', '💉', '🩺', '🧪', '🧽',
+  // Pets
+  '🐕', '🐶', '🐾', '🦴', '🐈', '🐱',
+  // Tools & Hardware
+  '🔧', '🔨', '🪛', '🔩', '🪜', '🧰', '⚙️', '🔗', '🪢', '🧲',
+  // Bedding & Comfort
+  '🛏️', '🛋️', '🪑', '🧸', '🪭', '🛡️',
+  // Documents & Misc
+  '📦', '🗃️', '📋', '📝', '🏷️', '🔑', '💳', '📁', '💰', '🎫',
+  // Safety & Emergency
+  '🧯', '⚠️', '🚨', '🆘', '⛑️', '🦺',
+  // Nature & Weather
+  '☀️', '🌙', '⭐', '🌧️', '❄️', '🌊', '🌸', '🍂',
+  // Fun & Activities
+  '🎮', '🎲', '🎯', '⚽', '🏈', '🎾', '🏓', '🛹', '🚴', '🏊'
+];
+
 class InventoryManager {
   constructor() {
     this.currentFilter = 'all';
@@ -214,6 +248,7 @@ class InventoryManager {
     let travelerQuantities = {};
 
     // If editing, populate form
+    let selectedIcon = '';
     if (itemId) {
       const item = await window.db.getItem(itemId);
       if (item) {
@@ -222,6 +257,7 @@ class InventoryManager {
         document.getElementById('item-location').value = item.storage_location || '';
         document.getElementById('item-quantity').value = item.quantity || 1;
         document.getElementById('item-icon').value = item.icon || '';
+        selectedIcon = item.icon || '';
         document.getElementById('item-permanent').checked = !!item.is_permanent;
         document.getElementById('item-critical').checked = !!item.is_critical;
         document.getElementById('item-purchase').value = item.purchase_timing || '';
@@ -229,6 +265,9 @@ class InventoryManager {
         travelerQuantities = item.traveler_quantities || {};
       }
     }
+
+    // Update icon picker button display
+    this.updateIconDisplay(selectedIcon);
 
     // Render traveler quantity inputs
     this.renderTravelerQuantityInputs(travelerQuantities);
@@ -291,6 +330,42 @@ class InventoryManager {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // Icon Picker Methods
+  updateIconDisplay(icon) {
+    const displayEl = document.getElementById('selected-icon');
+    const inputEl = document.getElementById('item-icon');
+    if (displayEl) {
+      displayEl.textContent = icon || '📦';
+    }
+    if (inputEl) {
+      inputEl.value = icon || '';
+    }
+  }
+
+  showIconPicker() {
+    const grid = document.getElementById('icon-picker-grid');
+    const currentIcon = document.getElementById('item-icon').value;
+
+    // Render icon grid
+    grid.innerHTML = ICON_CHOICES.map(icon => `
+      <button type="button" class="icon-option ${icon === currentIcon ? 'selected' : ''}"
+              onclick="inventory.selectIcon('${icon}')">
+        ${icon}
+      </button>
+    `).join('');
+
+    document.getElementById('icon-picker-modal').classList.remove('hidden');
+  }
+
+  closeIconPicker() {
+    document.getElementById('icon-picker-modal').classList.add('hidden');
+  }
+
+  selectIcon(icon) {
+    this.updateIconDisplay(icon);
+    this.closeIconPicker();
   }
 
   // Export inventory to JSON
