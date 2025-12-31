@@ -256,7 +256,10 @@
       <!-- Packing List Screen -->
       <section id="packing-screen" class="screen">
         <div class="packing-header">
-          <h2 id="packing-trip-name">Packing List</h2>
+          <div class="packing-header-top">
+            <h2 id="packing-trip-name">Packing List</h2>
+            <button id="delete-trip-btn" class="btn btn-danger btn-small" onclick="trips.deleteCurrentTrip()">Delete Trip</button>
+          </div>
           <div class="packing-progress">
             <span id="packed-count">0</span> / <span id="total-count">0</span> packed
           </div>
@@ -269,6 +272,7 @@
             <option value="workflow">Packing Workflow</option>
             <option value="location">Storage Location</option>
             <option value="category">Category</option>
+            <option value="traveler">Traveler</option>
           </select>
         </div>
 
@@ -335,6 +339,8 @@
             <input type="text" id="new-traveler-name" placeholder="Add traveler name..." class="traveler-input">
             <button id="add-traveler-btn" class="btn btn-primary btn-small">Add</button>
           </div>
+          <button id="fix-personal-items-btn" class="btn btn-secondary" style="margin-top: 12px;">Fix Personal Items for Travelers</button>
+          <p id="fix-personal-items-result" class="settings-hint" style="margin-top: 8px;"></p>
         </div>
 
         <div class="settings-section">

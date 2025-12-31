@@ -168,6 +168,21 @@ class TripsManager {
     if (this.currentTrip) {
       section.classList.remove('hidden');
       card.innerHTML = this.renderTripCard(this.currentTrip);
+
+      // Initialize swipe-to-delete for current trip card
+      if (!this.currentTripSwipeInitialized) {
+        window.app.initSwipeToDelete(
+          card,
+          '.trip-list-card',
+          async (id) => {
+            await window.db.deleteTrip(id);
+            this.currentTrip = null;
+            await this.loadHomeScreen();
+          }
+        );
+        this.currentTripSwipeInitialized = true;
+      }
+
       await this.loadPackingList();
     } else {
       section.classList.add('hidden');
@@ -257,11 +272,59 @@ class TripsManager {
     // Enrich trip items with item details
     this.tripItems = this.tripItems.map(ti => ({
       ...ti,
-      item: itemsMap.get(ti.item_id)
+      item: itemsMap.get(ti.item_id),
+      // Parse traveler_packed if stored as JSON string
+      traveler_packed: ti.traveler_packed ?
+        (typeof ti.traveler_packed === 'string' ? JSON.parse(ti.traveler_packed) : ti.traveler_packed)
+        : {}
     })).filter(ti => ti.item);
+
+    // Expand personal items into per-traveler entries
+    this.expandedTripItems = this.expandPersonalItems(this.tripItems);
 
     this.renderPackingList();
     this.renderPreDepartureList();
+  }
+
+  // Expand personal category items into separate entries per traveler
+  expandPersonalItems(tripItems) {
+    const expanded = [];
+    const travelersMap = new Map(this.travelers.map(t => [t.id, t]));
+
+    for (const ti of tripItems) {
+      const item = ti.item;
+      const isPersonal = TRIPS_PERSONAL_CATEGORIES.includes(item.category);
+      const hasTravelerQtys = item.traveler_quantities && Object.keys(item.traveler_quantities).length > 0;
+
+      if (isPersonal && hasTravelerQtys && this.travelers.length > 0) {
+        // Create separate entry for each traveler
+        for (const [travelerId, qty] of Object.entries(item.traveler_quantities)) {
+          const traveler = travelersMap.get(travelerId);
+          if (!traveler || qty <= 0) continue;
+
+          expanded.push({
+            ...ti,
+            // Unique ID for this traveler's entry
+            expandedId: `${ti.id}_${travelerId}`,
+            travelerId: travelerId,
+            travelerName: traveler.name,
+            travelerQty: qty,
+            // Check if this traveler's portion is packed
+            packed: ti.traveler_packed?.[travelerId] || false,
+            isExpanded: true
+          });
+        }
+      } else {
+        // Non-personal item or no traveler quantities - keep as single entry
+        expanded.push({
+          ...ti,
+          expandedId: ti.id,
+          isExpanded: false
+        });
+      }
+    }
+
+    return expanded;
   }
 
   changeSortMode(mode) {
@@ -275,9 +338,9 @@ class TripsManager {
       tripName.textContent = this.currentTrip.name;
     }
 
-    // Update progress
-    const packedCount = this.tripItems.filter(ti => ti.packed).length;
-    const totalCount = this.tripItems.length;
+    // Update progress using expanded items (counts each traveler's items separately)
+    const packedCount = this.expandedTripItems.filter(ti => ti.packed).length;
+    const totalCount = this.expandedTripItems.length;
 
     document.getElementById('packed-count').textContent = packedCount;
     document.getElementById('total-count').textContent = totalCount;
@@ -293,6 +356,9 @@ class TripsManager {
       case 'category':
         this.renderByCategory(container);
         break;
+      case 'traveler':
+        this.renderByTraveler(container);
+        break;
       default:
         this.renderByWorkflow(container);
     }
@@ -302,18 +368,18 @@ class TripsManager {
     // Get locations for grouping
     const locationsMap = new Map(this.locations.map(l => [l.id, l]));
 
-    // Group items by workflow phase
-    const critical = this.tripItems.filter(ti => ti.item.is_critical);
-    const houseItems = this.tripItems.filter(ti =>
+    // Group expanded items by workflow phase
+    const critical = this.expandedTripItems.filter(ti => ti.item.is_critical);
+    const houseItems = this.expandedTripItems.filter(ti =>
       ti.item.storage_location === 'house' && !ti.item.is_critical
     );
-    const permanent = this.tripItems.filter(ti =>
+    const permanent = this.expandedTripItems.filter(ti =>
       ti.item.is_permanent && !ti.item.is_critical
     );
-    const purchaseBefore = this.tripItems.filter(ti =>
+    const purchaseBefore = this.expandedTripItems.filter(ti =>
       ti.item.purchase_timing === 'before_arrival' && !ti.item.is_critical
     );
-    const purchaseAfter = this.tripItems.filter(ti =>
+    const purchaseAfter = this.expandedTripItems.filter(ti =>
       ti.item.purchase_timing === 'after_arrival'
     );
 
@@ -348,9 +414,9 @@ class TripsManager {
       return (a.sort_order || 0) - (b.sort_order || 0);
     });
 
-    // Group items by location
+    // Group expanded items by location
     const itemsByLocation = {};
-    for (const ti of this.tripItems) {
+    for (const ti of this.expandedTripItems) {
       const loc = ti.item.storage_location || 'unknown';
       if (!itemsByLocation[loc]) {
         itemsByLocation[loc] = [];
@@ -394,9 +460,9 @@ class TripsManager {
       other: 'Other'
     };
 
-    // Group items by category
+    // Group expanded items by category
     const itemsByCategory = {};
-    for (const ti of this.tripItems) {
+    for (const ti of this.expandedTripItems) {
       const cat = ti.item.category || 'other';
       if (!itemsByCategory[cat]) {
         itemsByCategory[cat] = [];
@@ -417,6 +483,46 @@ class TripsManager {
       const items = itemsByCategory[cat];
       const catName = categoryNames[cat] || cat;
       html += this.renderSection(catName, items);
+    }
+
+    container.innerHTML = html || '<p class="empty-text">No items in packing list</p>';
+    this.bindChecklistEvents(container);
+  }
+
+  renderByTraveler(container) {
+    // Group items by traveler for personal items, shared items go in their own section
+    const itemsByTraveler = {};
+    const sharedItems = [];
+
+    for (const ti of this.expandedTripItems) {
+      if (ti.isExpanded && ti.travelerId) {
+        // Personal item with traveler
+        if (!itemsByTraveler[ti.travelerId]) {
+          itemsByTraveler[ti.travelerId] = {
+            name: ti.travelerName,
+            items: []
+          };
+        }
+        itemsByTraveler[ti.travelerId].items.push(ti);
+      } else {
+        // Shared/non-personal item
+        sharedItems.push(ti);
+      }
+    }
+
+    let html = '';
+
+    // Render each traveler's section
+    for (const traveler of this.travelers) {
+      const travelerData = itemsByTraveler[traveler.id];
+      if (travelerData && travelerData.items.length > 0) {
+        html += this.renderSection(`${travelerData.name}'s Items`, travelerData.items);
+      }
+    }
+
+    // Render shared items last
+    if (sharedItems.length > 0) {
+      html += this.renderSection('Shared Items', sharedItems);
     }
 
     container.innerHTML = html || '<p class="empty-text">No items in packing list</p>';
@@ -448,30 +554,31 @@ class TripsManager {
     const badges = [];
     if (item.is_critical) badges.push('<span class="badge-sm critical">!</span>');
 
-    // Show traveler quantities for personal items
+    // For expanded traveler items, show traveler name and their quantity
+    let itemName = this.escapeHtml(item.name);
     let quantityInfo = '';
-    if (TRIPS_PERSONAL_CATEGORIES.includes(item.category) && this.travelers.length > 0 && item.traveler_quantities) {
-      const travelerQtys = Object.entries(item.traveler_quantities)
-        .map(([travelerId, qty]) => {
-          const traveler = this.travelers.find(t => t.id === travelerId);
-          return traveler ? `${traveler.name}: ${qty}` : null;
-        })
-        .filter(Boolean);
 
-      if (travelerQtys.length > 0) {
-        quantityInfo = `<div class="checklist-travelers">${travelerQtys.join(', ')}</div>`;
+    if (tripItem.isExpanded) {
+      // This is a per-traveler entry
+      itemName = `${this.escapeHtml(item.name)} <span class="traveler-tag">${this.escapeHtml(tripItem.travelerName)}</span>`;
+      if (tripItem.travelerQty > 1) {
+        quantityInfo = `<div class="checklist-quantity">${tripItem.travelerQty}x</div>`;
       }
     } else if (item.quantity && item.quantity > 1) {
-      // Show regular quantity if no traveler quantities
+      // Non-personal item with quantity
       quantityInfo = `<div class="checklist-quantity">${item.quantity}x</div>`;
     }
 
+    // Data attributes for toggle handling
+    const dataAttrs = `data-id="${tripItem.id}" data-expanded-id="${tripItem.expandedId}" data-item-id="${item.id}"`;
+    const travelerAttr = tripItem.travelerId ? `data-traveler-id="${tripItem.travelerId}"` : '';
+
     return `
-      <div class="checklist-item ${tripItem.packed ? 'checked' : ''}" data-id="${tripItem.id}" data-item-id="${item.id}">
+      <div class="checklist-item ${tripItem.packed ? 'checked' : ''}" ${dataAttrs} ${travelerAttr}>
         <div class="checklist-checkbox"></div>
         <div class="checklist-icon">${icon}</div>
         <div class="checklist-info">
-          <div class="checklist-name">${this.escapeHtml(item.name)} ${badges.join('')}</div>
+          <div class="checklist-name">${itemName} ${badges.join('')}</div>
           <div class="checklist-location">${location}</div>
           ${quantityInfo}
         </div>
@@ -481,7 +588,11 @@ class TripsManager {
 
   bindChecklistEvents(container) {
     container.querySelectorAll('.checklist-item').forEach(el => {
-      el.addEventListener('click', () => this.togglePacked(el.dataset.id));
+      el.addEventListener('click', () => {
+        const tripItemId = el.dataset.id;
+        const travelerId = el.dataset.travelerId || null;
+        this.togglePacked(tripItemId, travelerId);
+      });
     });
 
     // Initialize long-press for quick edit (only once)
@@ -495,8 +606,14 @@ class TripsManager {
     }
   }
 
-  async togglePacked(tripItemId) {
-    await window.db.toggleTripItemPacked(tripItemId);
+  async togglePacked(tripItemId, travelerId = null) {
+    if (travelerId) {
+      // Toggle per-traveler packed status
+      await window.db.toggleTripItemTravelerPacked(tripItemId, travelerId);
+    } else {
+      // Toggle regular packed status
+      await window.db.toggleTripItemPacked(tripItemId);
+    }
     await this.loadPackingList();
   }
 
@@ -608,6 +725,22 @@ class TripsManager {
 
     this.currentTrip.status = 'completed';
     await window.db.saveTrip(this.currentTrip);
+    this.currentTrip = null;
+    this.tripItems = [];
+
+    window.app.showScreen('home');
+    await this.loadHomeScreen();
+  }
+
+  // Delete current trip
+  async deleteCurrentTrip() {
+    if (!this.currentTrip) return;
+
+    if (!confirm(`Delete "${this.currentTrip.name}"? This cannot be undone.`)) {
+      return;
+    }
+
+    await window.db.deleteTrip(this.currentTrip.id);
     this.currentTrip = null;
     this.tripItems = [];
 

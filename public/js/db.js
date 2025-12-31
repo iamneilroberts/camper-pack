@@ -314,6 +314,26 @@ class CamperPackDB {
     }
   }
 
+  async toggleTripItemTravelerPacked(id, travelerId) {
+    const item = await this.get('tripItems', id);
+    if (item) {
+      // Parse traveler_packed if it's a string
+      let travelerPacked = item.traveler_packed || {};
+      if (typeof travelerPacked === 'string') {
+        travelerPacked = JSON.parse(travelerPacked);
+      }
+
+      // Toggle this traveler's packed status
+      travelerPacked[travelerId] = !travelerPacked[travelerId];
+
+      // Store as JSON string
+      item.traveler_packed = JSON.stringify(travelerPacked);
+      item.updated_at = new Date().toISOString();
+
+      return this.put('tripItems', item);
+    }
+  }
+
   // Storage Locations methods
   async getAllLocations() {
     return this.getAll('locations');

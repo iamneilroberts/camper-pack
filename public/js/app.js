@@ -190,6 +190,55 @@ class CamperPackApp {
         }
       });
     }
+
+    // Fix personal items button
+    const fixPersonalItemsBtn = document.getElementById('fix-personal-items-btn');
+    if (fixPersonalItemsBtn) {
+      fixPersonalItemsBtn.addEventListener('click', () => this.fixPersonalItemsForTravelers());
+    }
+  }
+
+  // Batch update personal items with traveler quantities
+  async fixPersonalItemsForTravelers() {
+    const PERSONAL_CATEGORIES = ['clothing', 'toiletries', 'meds', 'other'];
+    const resultEl = document.getElementById('fix-personal-items-result');
+
+    // Get all travelers
+    const travelers = await window.db.getAllTravelers();
+    if (travelers.length === 0) {
+      resultEl.textContent = 'No travelers found. Add travelers first!';
+      resultEl.style.color = 'var(--danger)';
+      return;
+    }
+
+    resultEl.textContent = 'Updating items...';
+    resultEl.style.color = '';
+
+    // Get all items
+    const items = await window.db.getAllItems();
+
+    // Find personal items without traveler_quantities
+    const itemsToUpdate = items.filter(item => {
+      const isPersonal = PERSONAL_CATEGORIES.includes(item.category);
+      const hasTravelerQtys = item.traveler_quantities && Object.keys(item.traveler_quantities).length > 0;
+      return isPersonal && !hasTravelerQtys;
+    });
+
+    // Update each item with default traveler quantities
+    let updated = 0;
+    for (const item of itemsToUpdate) {
+      const travelerQuantities = {};
+      for (const traveler of travelers) {
+        travelerQuantities[traveler.id] = item.quantity || 1;
+      }
+      item.traveler_quantities = travelerQuantities;
+      await window.db.saveItem(item);
+      updated++;
+    }
+
+    const totalPersonal = items.filter(i => PERSONAL_CATEGORIES.includes(i.category)).length;
+    resultEl.textContent = `Done! Updated ${updated} of ${totalPersonal} personal items for ${travelers.map(t => t.name).join(' & ')}.`;
+    resultEl.style.color = 'var(--success)';
   }
 
   // Traveler management methods
@@ -296,6 +345,7 @@ class CamperPackApp {
 
       if (isDragging && diff > 0) {
         // Swiping left - show delete
+        swipingItem.classList.add('swiping');
         const translate = Math.min(diff, SWIPE_THRESHOLD + 20);
         const content = swipingItem.querySelector('.item-content');
         if (content) {
@@ -309,6 +359,9 @@ class CamperPackApp {
 
       const diff = startX - currentX;
       const content = swipingItem.querySelector('.item-content');
+
+      // Remove swiping class
+      swipingItem.classList.remove('swiping');
 
       if (diff > SWIPE_THRESHOLD) {
         // Snap to delete state

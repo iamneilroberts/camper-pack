@@ -500,14 +500,19 @@ form {
 
 /* Packing List */
 .packing-header {
+  margin-bottom: 16px;
+}
+
+.packing-header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .packing-header h2 {
   font-size: 1.25rem;
+  margin: 0;
 }
 
 .packing-progress {
@@ -595,6 +600,22 @@ form {
 
 .checklist-name {
   font-weight: 500;
+}
+
+.traveler-tag {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.checklist-item.checked .traveler-tag {
+  opacity: 0.6;
 }
 
 .checklist-location {
@@ -824,6 +845,15 @@ form {
   font-weight: 600;
   font-size: 0.85rem;
   z-index: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-out;
+}
+
+.swipeable-item.swiping .delete-action,
+.swipeable-item.swiped .delete-action {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .swipeable-item.swiped .item-content {

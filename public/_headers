@@ -1,0 +1,10 @@
+# Disable caching for JS and CSS during development
+/js/*
+  Cache-Control: no-cache, must-revalidate
+
+/css/*
+  Cache-Control: no-cache, must-revalidate
+
+# Cache images and icons longer
+/icons/*
+  Cache-Control: public, max-age=86400
