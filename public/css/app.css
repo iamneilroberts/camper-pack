@@ -830,6 +830,30 @@ form {
   transform: translateX(-80px);
 }
 
+/* Trip card swipeable styles */
+.trip-list-card.swipeable-item {
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+}
+
+.trip-list-card.swipeable-item .item-content {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 12px;
+}
+
+/* Template item wrapper swipeable styles */
+.template-item-wrapper.swipeable-item {
+  border-radius: var(--radius);
+  margin-bottom: 4px;
+}
+
+.template-item-wrapper .template-item.item-content {
+  margin: 0;
+  border-radius: 0;
+}
+
 /* Quick Edit Modal */
 .modal {
   position: fixed;

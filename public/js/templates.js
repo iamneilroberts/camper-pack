@@ -102,6 +102,24 @@ class TemplatesManager {
       );
       this.longPressInitialized = true;
     }
+
+    // Initialize swipe-to-delete for template items
+    if (!this.swipeInitialized) {
+      window.app.initSwipeToDelete(
+        container,
+        '.template-item-wrapper',
+        async (id) => {
+          await window.db.deleteItem(id);
+          // Refresh items and re-render
+          this.items = await window.db.getAllItems();
+          const template = await window.db.getTemplate(this.currentTemplateId);
+          this.templateItems = await window.db.getTemplateItems(this.currentTemplateId);
+          const selectedIds = new Set(this.templateItems.map(ti => ti.item_id));
+          this.renderTemplateEditor(template, selectedIds);
+        }
+      );
+      this.swipeInitialized = true;
+    }
   }
 
   renderCategorySection(category, items, selectedIds) {
@@ -146,14 +164,17 @@ class TemplatesManager {
     const icon = item.icon || this.getCategoryIcon(item.category);
 
     return `
-      <label class="template-item ${isSelected ? 'selected' : ''}">
-        <input type="checkbox" class="template-item-checkbox"
-               data-item-id="${item.id}"
-               ${isSelected ? 'checked' : ''}>
-        <span class="item-icon">${icon}</span>
-        <span class="item-name">${this.escapeHtml(item.name)}</span>
-        <span class="item-badges">${badges.join('')}</span>
-      </label>
+      <div class="template-item-wrapper swipeable-item" data-id="${item.id}">
+        <label class="template-item item-content ${isSelected ? 'selected' : ''}">
+          <input type="checkbox" class="template-item-checkbox"
+                 data-item-id="${item.id}"
+                 ${isSelected ? 'checked' : ''}>
+          <span class="item-icon">${icon}</span>
+          <span class="item-name">${this.escapeHtml(item.name)}</span>
+          <span class="item-badges">${badges.join('')}</span>
+        </label>
+        <div class="delete-action">Delete</div>
+      </div>
     `;
   }
 

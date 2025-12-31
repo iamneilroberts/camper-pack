@@ -100,6 +100,19 @@ class TripsManager {
     });
 
     container.innerHTML = trips.map(trip => this.renderTripCard(trip)).join('');
+
+    // Initialize swipe-to-delete for trips
+    if (!this.tripsSwipeInitialized) {
+      window.app.initSwipeToDelete(
+        container,
+        '.trip-list-card',
+        async (id) => {
+          await window.db.deleteTrip(id);
+          await this.renderTripsList();
+        }
+      );
+      this.tripsSwipeInitialized = true;
+    }
   }
 
   renderTripCard(trip) {
@@ -117,17 +130,20 @@ class TripsManager {
     const statusClass = trip.status || 'planning';
 
     return `
-      <div class="trip-list-card ${statusClass}" onclick="trips.openTrip('${trip.id}')">
-        <div class="trip-card-content">
-          <div class="trip-card-name">${this.escapeHtml(trip.name)}</div>
-          <div class="trip-card-details">
-            ${trip.destination ? `<span class="trip-destination">${this.escapeHtml(trip.destination)}</span>` : ''}
-            ${dateRange ? `<span class="trip-dates">${dateRange}</span>` : ''}
+      <div class="trip-list-card swipeable-item ${statusClass}" data-id="${trip.id}">
+        <div class="item-content" onclick="trips.openTrip('${trip.id}')">
+          <div class="trip-card-content">
+            <div class="trip-card-name">${this.escapeHtml(trip.name)}</div>
+            <div class="trip-card-details">
+              ${trip.destination ? `<span class="trip-destination">${this.escapeHtml(trip.destination)}</span>` : ''}
+              ${dateRange ? `<span class="trip-dates">${dateRange}</span>` : ''}
+            </div>
+          </div>
+          <div class="trip-card-status">
+            <span class="status-badge ${statusClass}">${statusLabels[trip.status] || trip.status}</span>
           </div>
         </div>
-        <div class="trip-card-status">
-          <span class="status-badge ${statusClass}">${statusLabels[trip.status] || trip.status}</span>
-        </div>
+        <div class="delete-action">Delete</div>
       </div>
     `;
   }
